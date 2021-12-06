@@ -19,8 +19,8 @@ class DVRouter(TransportHost):
         self.my_dv = {}
         self.neighbor_dvs = {}
 
-        # Forwarding table is initialized in TransportHost.__init__()
-        # (our parent)
+        # Forwarding table is initialized in Host.__init__();
+        # Host is an ancestor class that handles IP Forwarding
 
         self._initialize_dv_sock()
 
