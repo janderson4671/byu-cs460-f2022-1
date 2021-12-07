@@ -303,6 +303,30 @@ by the destination.
    use with this lab.  In particular, the initialization methods include
    additional arguments for a more full-featured and flexible TCP
    implementation.
+ - In the
+   [Transport Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer)
+   you implemented TCP's three-way handshake by fleshing out (among others) the
+   `TCPSocket.handle_syn()` and `TCPSocket.handle_synack()` methods.  In those
+   methods the initial sequence number of the client and that of the server are
+   learned, respectively, by the server and the client.  However, in that lab,
+   no data was exchanged, so there was no need to initialize a receive buffer.
+
+   In the
+   [TCP Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-tcp-reliable-transport)
+   data was reliably exchanged, but instead of using a three-way handshake to
+   exchange initial sequence numbers, they were manually set using the
+   `TCPSocket.bypass_handshake()` method.
+
+   In this lab, you will use the TCP three-way handshake to exchange the
+   initial sequence numbers that will be used to reliably transmit data.  That
+   means that you will need to modify the methods associated with the three-way
+   handshake to initialize the receive buffer, once the initial sequence number
+   of the remote peer has been learned.
+
+   Modify `TCPSocket.handle_syn()` and `TCPSocket.handle_synack()` such that
+   the `receive_buffer` is initialized in each case using the initial sequence
+   number sent in the SYN or SYNACK packet, respectively.  You can use the
+   `TCPSocket.bypass_handshake()` method as an example.
 
 To test TCP connectivity between hosts separated by multiple routers, you can
 run the following:
