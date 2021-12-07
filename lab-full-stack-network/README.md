@@ -81,10 +81,7 @@ with native switches).
    function, such that a host running it functions like a router that forwards
    packets, but has only statically-configured routes (as opposed to using a routing
    protocol.
- - Copy the `host.py` file containing the working implementation of the `Host`
-   class that you created in the
-   [Network Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-network-layer).
-   to `host.py`.
+
  - `Host.handle_ip()` currently accepts IP packets with destination address
    matching either an IP address associated with an interface on the host
    or the global broadcast IP address, 255.255.255.255.
@@ -93,6 +90,7 @@ with native switches).
    broadcast address for each of the host's interfaces.  This can be found
    with the `int_to_info` attribute, which is documented
    [here](https://github.com/cdeccio/cougarnet/blob/main/README.md#baseframehandler).
+
  - `Host.send_packet_on_int()` currently checks the host's ARP table for an
    entry corresponding to the next-hop IP address, and if no entry is found, it
    sends an ARP request.  However, in the case that the destination IP address
