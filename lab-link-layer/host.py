@@ -1,15 +1,15 @@
 #!/usr/bin/python3
 
+import asyncio
 import os
 import socket
 
 from scapy.all import Ether, IP, ICMP
 from scapy.data import ETH_P_IP, IP_PROTOS 
 
-from cougarnet.networksched import NetworkEventLoop
-from cougarnet.rawpkt import BaseFrameHandler
+from cougarnet.sim.host import BaseHost
 
-class Host(BaseFrameHandler):
+class Host(BaseHost):
     def __init__(self):
         super(Host, self).__init__()
 
@@ -23,14 +23,14 @@ class Host(BaseFrameHandler):
         icmp = ICMP(type=8, id=id, seq=seq)
         response = frame / ip / icmp / b'0123456789'
 
-        intf = self.get_first_interface()
+        intf = self.get_interface()
         self.send_frame(bytes(response), intf)
 
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         pass
 
 class HostA(Host):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         a_to_c = ('10.0.0.1', '10.0.0.3',
                         '00:00:00:aa:aa:aa', '00:00:00:cc:cc:cc', 1, 1)
         a_to_broadcast = ('10.0.0.1', '255.255.255.255',
@@ -41,28 +41,31 @@ class HostA(Host):
         # send packet from a to c at time 4 and time 6
         # send packet from a to broadcast at time 7
         # send packet from a to e at time 9 and time 11
-        event_loop.schedule_event(4, self.send_icmp_echo, a_to_c)
-        event_loop.schedule_event(6, self.send_icmp_echo, a_to_c)
-        event_loop.schedule_event(7, self.send_icmp_echo, a_to_broadcast)
-        event_loop.schedule_event(9, self.send_icmp_echo, a_to_e)
-        event_loop.schedule_event(11, self.send_icmp_echo, a_to_e)
-        event_loop.schedule_event(15, self.send_icmp_echo, a_to_c)
+        loop = asyncio.get_event_loop()
+        loop.call_later(4, self.send_icmp_echo, *a_to_c)
+        loop.call_later(6, self.send_icmp_echo, *a_to_c)
+        loop.call_later(7, self.send_icmp_echo, *a_to_broadcast)
+        loop.call_later(9, self.send_icmp_echo, *a_to_e)
+        loop.call_later(11, self.send_icmp_echo, *a_to_e)
+        loop.call_later(15, self.send_icmp_echo, *a_to_c)
 
 class HostC(Host):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         c_to_a = ('10.0.0.3', '10.0.0.1',
                         '00:00:00:cc:cc:cc', '00:00:00:aa:aa:aa', 1, 1)
         e_to_a = ('10.0.0.5', '10.0.0.1',
                         '00:00:00:ee:ee:ee', '00:00:00:aa:aa:aa', 1, 1)
-        event_loop.schedule_event(5, self.send_icmp_echo, c_to_a)
-        event_loop.schedule_event(10, self.send_icmp_echo, e_to_a)
+        loop = asyncio.get_event_loop()
+        loop.call_later(5, self.send_icmp_echo, *c_to_a)
+        loop.call_later(10, self.send_icmp_echo, *e_to_a)
 
 class HostE(Host):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         e_to_a = ('10.0.0.5', '10.0.0.1',
                         '00:00:00:ee:ee:ee', '00:00:00:aa:aa:aa', 1, 1)
-        event_loop.schedule_event(8, self.send_icmp_echo, e_to_a)
-        event_loop.schedule_event(14, self.send_icmp_echo, e_to_a)
+        loop = asyncio.get_event_loop()
+        loop.call_later(8, self.send_icmp_echo, *e_to_a)
+        loop.call_later(14, self.send_icmp_echo, *e_to_a)
 
 
 def main():
@@ -77,9 +80,13 @@ def main():
         cls = Host
 
     host = cls()
-    event_loop = NetworkEventLoop(host._handle_frame)
-    host.schedule_items(event_loop)
-    event_loop.run()
+    host.schedule_items()
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_forever()
+    finally:
+        loop.close()
 
 if __name__ == '__main__':
     main()
