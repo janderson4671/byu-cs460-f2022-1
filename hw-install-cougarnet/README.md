@@ -27,10 +27,11 @@ $ sudo python3 setup.py install
 
 # Exercises
 
-1. Complete the four
-   [Working Examples](https://github.com/cdeccio/cougarnet/blob/main/README.md#working-examples)
-
-2. Look through the
+1. Look through the
    [Cougarnet documentation](https://github.com/cdeccio/cougarnet/blob/main/README.md).
    While much of it might not make sense just yet, you will be referring back
-   to this as you do the labs.
+   to this as you work on the labs.
+
+2. Complete the four
+   [Working Examples](https://github.com/cdeccio/cougarnet/blob/main/README.md#working-examples)
+
