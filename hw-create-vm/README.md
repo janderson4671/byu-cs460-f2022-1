@@ -2,7 +2,7 @@
 
 The point of this exercise is to install a Linux-based OS on a Virtual Machine
 (VM) dedicated to the assignments for this class.  Using a VM is necessary for
-the following reasons.  First, the network emulation framework we will be using
+the following reasons.  First, the virtual network framework we will be using
 makes configuration changes to your network interfaces, which you don't want to
 affect other applications on a working system.  Second, running the framework
 requires root (administrator) privileges, which you typically don't want to use
