@@ -10,11 +10,11 @@ to run applications on a more general system.
 
 Generally you might select almost any distribution of Linux.  However, for this
 class I am asking that you use Debian because the framework has been tested in
-this environment.  
+this environment.
 
 1. Download and install
    [VirtualBox](https://www.virtualbox.org/wiki/Downloads).
-   
+
    Alternatively, you may use the VirtualBox that is already installed on the
    CS open lab machines.
 
@@ -58,24 +58,26 @@ this environment.
    # usermod -a -G sudo username
    ```
 
-   (replace `username` with your username).  Now log out of LXDE and log back
-   in.  As a member of the `sudo` group, you will be able to run commands that
-   require administrator privileges on a command-by-command basis using `sudo`,
-   rather than working as the `root` user, which is discouraged.
+   (Replace `username` with your username.)
+
+   Now log out of LXDE and log back in.  As a member of the `sudo` group, you
+   will be able to run commands that require administrator privileges on a
+   command-by-command basis using `sudo`, rather than working as the `root`
+   user, which is discouraged.
 
 7. On the host machine, select "Devices" from the VirtualBox menu, then select
    "Insert Guest Additions CD Image..."
-   
+
 8. Within the guest OS, open a terminal, and run the following from the command
    line to mount the CD volume:
-   
+
    ```
    $ mount /media/cdrom
    ```
-   
+
    Then run the following commands to build and install the VirtualBox Guest
    Additions for your VM:
-   
+
    ```
    $ sudo apt install linux-headers-amd64 build-essential
    $ sudo sh /media/cdrom/VBoxLinuxAdditions.run
@@ -94,17 +96,20 @@ this environment.
     where `username` is your actual username).  Selecting both "Auto-mount" and
     "Make permanent" is recommended.  For more information see the
     [official documentation](https://docs.oracle.com/en/virtualization/virtualbox/6.0/user/sharedfolders.html).
-    
+ 
 11. From the prompt, add your user to the `vboxsf` (VirtualBox shared folders)
     group:
 
     ```
     $ sudo usermod -a -G vboxsf username
     ```
-    (again replace `username` with your username).  Now log out of LXDE and log
-    back in.  As a member of the `vboxsf` group, you will be able to access the
-    host folder `/Users/username/VMshared` (or whichever folder you selected)
-    from `/home/username/host` (or whichever mount point you selected) in the VM.
+
+    (Replace `username` with your username.)
+
+    Now log out of LXDE and log back in.  As a member of the `vboxsf` group,
+    you will be able to access the folder `/Users/username/VMshared` (or
+    whichever folder you selected) on the host from `/home/username/host` (or
+    whichever mount point you selected) in the VM.
 
 12. On the host machine, select "Devices" from the VirtualBox menu, then select
     "Shared Clipboard", then "Bidirectional". This will allow you to "copy" items
