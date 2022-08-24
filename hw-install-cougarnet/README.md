@@ -7,6 +7,8 @@ class.
 
 # Installation
 
+## Install Dependencies
+
 Use the following commands to install the build and run-time dependencies for
 Cougarnet:
 
@@ -14,6 +16,8 @@ Cougarnet:
 $ sudo apt install git python3-setuptools
 $ sudo apt install openvswitch-switch tmux lxterminal python3-pygraphviz libgraph-easy-perl tcpdump wireshark socat
 ```
+
+## Install Cougarnet
 
 Clone the Cougarnet repository, then build and install it:
 
@@ -24,6 +28,49 @@ $ python3 setup.py build
 $ sudo python3 setup.py install
 ```
 
+## Configure System
+
+ 1. Run the following to create the group `cougarnet` and add your user to it:
+
+    ```
+    $ sudo groupadd cougarnet
+    $ sudo usermod -a -G cougarnet username
+
+    ```
+
+    (Replace `username` with your username.)
+
+    Now log out of LXDE and log back in, so your user is a member of the
+    `cougarnet` group.  The privileges associated with this group membership
+    will be explained in the next instruction.
+
+ 2. Run the following to edit `/etc/sudoers.d/99-local`
+
+    ```bash
+    $ sudo visudo -f /etc/sudoers.d/99-local
+    ```
+
+    Note that `/etc/sudoers` is the configuration file for `sudo`.  On many
+    systems, files in the directory `/etc/sudoers.d` are "included" by
+    `/etc/sudoers`, and it is preferred to create local configuration (i.e.,
+    overriding the default) in files in this directory, ratehr than modifying
+    `/etc/sudoers` directly.  Finally, the proper way to to modify the `sudo`
+    configuration (whether `/etc/sudoers` or an included file) is using the
+    `visudo` command, as shown above.
+
+    Add the following contents to this file:
+
+    ```
+    %cougarnet  ALL=(ALL:ALL) NOPASSWD:SETENV: /usr/libexec/cougarnet/syscmd_helper
+    ```
+
+    This will allow members of the `cougarnet` group to run the command
+    `/usr/libexec/cougarnet/syscmd_helper` as `root` using the `sudo` command,
+    without prompting for a password (`NOPASSWD`).  The `SETENV` option
+    indicates that the environment will be preserved when the command is run.
+    The script `syscmd_helper` is a script that runs in connection with
+    Cougarnet to execute privileged operations associated with virtual network
+    creation and configuration.
 
 # Exercises
 
@@ -34,4 +81,3 @@ $ sudo python3 setup.py install
 
 2. Complete the four
    [Working Examples](https://github.com/cdeccio/cougarnet/blob/main/README.md#working-examples)
-
