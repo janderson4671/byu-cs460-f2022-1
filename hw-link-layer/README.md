@@ -1,38 +1,28 @@
 # Hands-On with the Link Layer
 
-The objectives of this assignment are to 1) familiarize you with the framework
-that you will be using for the remainder of class on which your labs will be
-developed, and 2) gain hands-on experience with switches and VLANS.
+The objective of this assignment is gain hands-on experience with switches and
+VLANS.
 
 
 # Getting Started
 
- 
-## Cougarnet Installation
-To make sure you have the packages that you need installed on your system, run
-the following:
+## Update Cougarnet
 
-```bash
-$ sudo apt install git wireshark tcpdump python3-pygraphviz socat openvswitch-switch libgraph-easy-perl
+Make sure you have the most up-to-date version of Cougarnet installed by
+running the following in your `cougarnet` directory:
+
 ```
-
-Then clone the Cougarnet repository, and build and install it:
-
-```bash
-$ git clone https://github.com/cdeccio/cougarnet/
-$ cd cougarnet
+$ git pull
 $ python3 setup.py build
 $ sudo python3 setup.py install
 ```
 
-Familiarize yourself with the [Cougarnet
-documentation](https://github.com/cdeccio/cougarnet/blob/main/README.md), and
-complete *at least* the ["Getting
-Started"](https://github.com/cdeccio/cougarnet/blob/main/README.md#getting-started)
-exercise.  You are welcome to poke around and experiment.
+Remember that you can always get the most up-to-date documentation for
+Cougarnet [here](https://github.com/cdeccio/cougarnet/blob/main/README.md).
 
 
 ## Start the Network
+
 File `h6-s2-vlan.cfg` contains a configuration file that describes a network
 with six hosts: `a` through `c` connected to switch `s1`, `d` through `f`
 connected to switch `s2`, and `s1` and `s2` connected to each other.  Also,
@@ -42,19 +32,27 @@ VLAN 30.
 Run the following command to create and start the network:
 
 ```bash
-cougarnet --display -w s1 h6-s2-vlan.cfg
+$ cougarnet --wireshark a-s1,b-s1,c-s1,d-s2,e-s2,f-s2 --display h6-s2-vlan.cfg
 ```
 
-The `--display` option tells `cougarnet` to print out the network layout before
-starting all the hosts.  The `-w` option tells `cougarnet` to start a
-`wireshark` instance on `s1`--which means that you can sniff packets from any
-of its interfaces (and, because of how it is currently implemented, from any
-other switch).  Because of the current configuration, you will only see three
-terminals show up, one associated with host `b`, one associated with host `e`,
-and one associated with switch `s1`.
+The `--display` option tells Cougarnet to print out the network layout before
+starting all the hosts.  The `--wireshark` option tells Cougarnet to open
+Wireshark and begin capturing on the following interfaces:
+
+ * `a-s1` (host `a`'s interface that connects it to `s1`)
+ * `b-s1` (host `b`'s interface that connects it to `s1`)
+ * `c-s1` (host `c`'s interface that connects it to `s1`)
+ * `d-s2` (host `d`'s interface that connects it to `s2`)
+ * `e-s2` (host `e`'s interface that connects it to `s2`)
+ * `f-s2` (host `f`'s interface that connects it to `s2`)
+
+Because of the current configuration, you will only see three terminals show
+up, one associated with host `b`, one associated with host `e`, and one
+associated with switch `s1`.
 
 
 ## Prepare the Host for Link-Layer Analysis
+
 The following instructions prepare the network for our experiments, allowing us
 to focus on the link layer.
 
@@ -77,10 +75,10 @@ e$ sudo iptables -I INPUT -j DROP
 The first line in each snippet (i.e., the `ip neigh` command) simply hard-codes
 the MAC address for the given destination device (we know the MAC address
 because set it explicitly in the config file), so it doesn't need to be found
-through ARP--which we haven't studied yet.  The second line in each snippet
-(i.e., `iptables`) blocks any packets from getting through, with a firewall
-rule.  This allows us to do a `ping` and only focus on the request.
-
+through ARP--another protocol, which we haven't studied yet.  The second line
+in each snippet (i.e., `iptables`) blocks any packets from getting through,
+with a firewall rule.  This allows us to do a `ping` and only focus on the
+request (i.e., because a response will never be seen).
 
 Finally, reset the MAC address tables in each of the switches by running the
 following from the `s1` terminal:
@@ -89,13 +87,6 @@ following from the `s1` terminal:
 s1$ sudo ovs-appctl fdb/flush s1
 s1$ sudo ovs-appctl fdb/flush s2
 ```
-
-
-## Begin Packet Capture
-Now go to the open Wireshark window, click the "Capture Options" button (the
-gear icon).  Select all interfaces starting with `s1-` or `s2-` (our two
-switches).  You can select multiple by holding `ctrl` or `shift` when you click
-on the interfaces.
 
 
 # Exercise
@@ -114,7 +105,7 @@ on the interfaces.
  2. Run the following command on `b` to send a single frame from `b` to `e`:
    
     ```bash
-    b$ ping -c 1 -W 1 e
+    b$ ping -c 1 -W 1 10.0.0.5
     ```
 
     (The `-c` option tells `ping` to send just one packet, and the `-W` option
@@ -148,7 +139,7 @@ on the interfaces.
  5. Run the following command on `e` to send a single frame from `e` to `b`:
    
     ```bash
-    e$ ping -c 1 -W 1 b
+    e$ ping -c 1 -W 1 10.0.0.2
     ```
 
     Look again at the running packet capture, sorted by the "Time" column.
@@ -180,13 +171,13 @@ on the interfaces.
     Now run the following from host `b`:
 
     ```bash
-    b$ ping -c 5 -W 1 e
+    b$ ping -c 5 -W 1 10.0.0.5
     ```
 
     Then:
 
     ```bash
-    b$ ping -c 5 -W 1 c
+    b$ ping -c 5 -W 1 10.0.0.3
     ```
 
     What is the difference between pinging `e` and pinging `c`?  Why is there a
@@ -203,16 +194,14 @@ on the interfaces.
     Now run the following from host `b`:
 
     ```bash
-    b$ ping -c 5 -W 1 e
+    b$ ping -c 5 -W 1 10.0.0.5
     ```
 
     Then:
 
     ```bash
-    b$ ping -c 5 -W 1 c
+    b$ ping -c 5 -W 1 10.0.0.3
     ```
 
     Is the outcome different than it was in the previous problem?  Why or why
     not?  Use the difference in configuration files to determine the answer.
-
-
