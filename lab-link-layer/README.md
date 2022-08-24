@@ -286,8 +286,8 @@ the output for your switch implementation matches appropriately.
 When it is working properly, test also with the `--terminal=none` option:
 
 ```
-$ cougarnet --native-apps=none --disable-ipv6 --terminal=none scenario1.cfg
-$ cougarnet --native-apps=none --disable-ipv6 --terminal=none scenario2.cfg
+$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+$ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 ```
 
 
@@ -325,9 +325,9 @@ work for those scenarios.
 When it is working properly, test also with the `--terminal=none` option:
 
 ```
-$ cougarnet --native-apps=none --disable-ipv6 --terminal=none scenario1.cfg
-$ cougarnet --native-apps=none --disable-ipv6 --terminal=none scenario2.cfg
-$ cougarnet --native-apps=none --disable-ipv6 --terminal=none scenario3.cfg
+$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+$ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
+$ cougarnet --disable-ipv6 --terminal=none scenario3.cfg
 ```
 
 
