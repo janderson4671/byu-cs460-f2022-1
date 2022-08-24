@@ -123,7 +123,12 @@ this environment.
     $ sudo apt autoremove
     ```
 
-14. Run the following to install a few packages that will be useful for you in
+14. Disable the screen locker by doing the following:
+    - Select "Preferences" then "Desktop Session Settings" from the menu.
+    - Uncheck the box titled "Screen Locker," and click "OK".
+    - Log out of LXDE and log back in.
+
+15. Run the following to install a few packages that will be useful for you in
     this class:
 
     ```
@@ -135,7 +140,7 @@ this environment.
     At the prompt "Should non-superusers be able to capture packets?" (for
     `wireshark`), select "No".
 
-15. Run the following to give `tcpdump`, `wireshark`, and `dumpcap` targeted
+16. Run the following to give `tcpdump`, `wireshark`, and `dumpcap` targeted
     capabilities, so an unprivileged user can run them to sniff network packets
     without elevating to `root`:
     ```
@@ -144,7 +149,7 @@ this environment.
     $ sudo setcap cap_net_raw=eip /usr/bin/dumpcap
     ```
 
-16. Install whatever other tools and utilities that you think will improve your
+17. Install whatever other tools and utilities that you think will improve your
     development environment.  Please note that if you have configured shared folders
     as described above, you can use whatever development environment you have already
     installed on your host to manipulate files in `/home/username/host` or some
