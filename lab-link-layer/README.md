@@ -445,7 +445,7 @@ short (two-byte) integer:
 ```python
 >>> import struct
 >>> short1, = struct.unpack('!H', bytes1[:2])
->> short1 #show the value of short1 as decimal
+>>> short1 #show the value of short1 as decimal
 258
 >>> '%04x' % short1 #show the value of short1 as hexadecimal
 '0102'
@@ -469,14 +469,14 @@ two one-byte integers (equivalent to `unsigned char` in C):
 To convert a short (two-byte) integer to a `bytes` object:
 
 ```python
->> struct.pack('!H', 0x0102)
+>>> struct.pack('!H', 0x0102)
 b'\x01\x02'
 ```
 
 or:
 
 ```python
->> struct.pack('!H', 258)
+>>> struct.pack('!H', 258)
 b'\x01\x02'
 ```
 
