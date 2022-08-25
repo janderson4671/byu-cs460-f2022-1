@@ -444,18 +444,18 @@ short (two-byte) integer:
 
 ```python
 >>> import struct
->> short1, = struct.unpack('H', bytes1[:2])
+>>> short1, = struct.unpack('!H', bytes1[:2])
 >> short1 #show the value of short1 as decimal
-513
+258
 >>> '%04x' % short1 #show the value of short1 as hexadecimal
-'0201'
+'0102'
 ```
 
 Or, to put the first two bytes from a `bytes` sequence (`bytes1`) into a
 two one-byte integers (equivalent to `unsigned char` in C):
 
 ```python
->>> byte1, byte2 = struct.unpack('BB', bytes1[:2])
+>>> byte1, byte2 = struct.unpack('!BB', bytes1[:2])
 >>> byte1 #show the value of byte1 as decimal
 1
 >>> byte2 #show the value of byte2 as decimal
@@ -469,28 +469,28 @@ two one-byte integers (equivalent to `unsigned char` in C):
 To convert a short (two-byte) integer to a `bytes` object:
 
 ```python
->> struct.pack('H', 0x0102)
-b'\x02\x01'
+>> struct.pack('!H', 0x0102)
+b'\x01\x02'
 ```
 
 or:
 
 ```python
->> struct.pack('H', 513)
+>> struct.pack('!H', 258)
 b'\x01\x02'
 ```
 
 To convert two one-byte integers to a `bytes` object:
 
 ```python
->>> struct.pack('BB', 0x1, 0x2)
+>>> struct.pack('!BB', 0x1, 0x2)
 b'\x01\x02'
 ```
 
 or:
 
 ```python
->>> struct.pack('BB', 1, 2)
+>>> struct.pack('!BB', 1, 2)
 b'\x01\x02'
 ```
 
