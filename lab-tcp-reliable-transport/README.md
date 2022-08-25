@@ -55,7 +55,7 @@ The files given to you for this lab are the following:
    your TCP buffer implementations.
  - `host.py` - a file containing a basic implementation of a host.  Note that
    this is pared down version of the `Host` class you implemented in the
-   [Network-Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-network-layer)
+   [Network-Layer Lab](../lab-network-layer)
    in which the `send_packet()` method simply picks an outgoing interface,
    creates a frame with the broadcast address as its destination, and sends the
    frame out the interface.
@@ -64,7 +64,7 @@ The files given to you for this lab are the following:
    `handle_udp()` and `handle_tcp()` methods.  You will also do your work here!
  - `transporthost.py` - a file containing a basic implementation of a host that has transport-layer capabilities.  Note that
    this is pared down version of the `TransportHost` class you implemented in the
-   [Transport-Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer)
+   [Transport-Layer Lab](../lab-transport-layer)
    in which the `handle_tcp()` simply expects a matching TCP connection to
    exist and calls `handle_packet()` on the corresponding socket, a `TCPSocket`
    instance.
@@ -553,12 +553,12 @@ filling in gaps.
 Finally, the transport-layer multiplexing functionality has been implemented
 for you, in a version of `TransportHost` with a very basic implementation of
 `TransportHost.handle_tcp()` (see the
-[Transport-Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer)).
+[Transport-Layer Lab](../lab-transport-layer)).
 
 However, his lab requires that you have the `TCPHeader` and `IPv4Header`
 classes fleshed out, as well as the `TCPSocket.create_packet()` and
 `TCPSocket.send_packet()` methods, as directed in the
-[Transport-Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer)
+[Transport-Layer Lab](../lab-transport-layer)
 
 A few words about TCP configuration parameters.  The Maximum Segment Size (MSS)
 is 1,000 bytes.  However, you can find that in the `mss` instance variable of
@@ -577,7 +577,7 @@ may or may not acknowledge new data.
 ## Instructions
 
 Integrate the following code from your implementation of the
-[Transport Layer](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer):
+[Transport Layer](../lab-transport-layer):
 
  - The `TCPHeader` and `IPv4Header` classes from `headers.py`.
  - The `TCPSocket.create_packet()` and `TCPSocket.send_packet()` methods from
@@ -902,7 +902,7 @@ exponential growth associated with the slow start state (beginning at 0)
 followed by congestion avoidance (starting at around 0.8 seconds).  If you need
 a reminder of the meaning of the Time Sequence plot or whether or not it is
 showing correct behavior, refer to the
-[Transport-Layer Homework](https://github.com/cdeccio/byu-cs460-f2021/tree/master/hw-transport-layer)
+[Transport-Layer Homework](../hw-transport-layer)
 
 If everything looks good, click "Save As...", and save the file as
 `tahoe-noloss.png`.

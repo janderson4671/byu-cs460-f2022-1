@@ -116,9 +116,9 @@ doesn't know where to go!
 
 Rather than manually creating static forwarding entries, like you did with the
 previous
-[homework](https://github.com/cdeccio/byu-cs460-f2021/blob/master/hw-network-layer/)
+[homework](../hw-network-layer/)
 and
-[lab](https://github.com/cdeccio/byu-cs460-f2021/blob/master/lab-network-layer/),
+[lab](../lab-network-layer/),
 in this lab, you will update the forwarding tables dynamically using a distance
 vector (DV) protocol.  Indeed, you will have a working router that will not
 only be capable of _forwarding_ packets but also _routing_!

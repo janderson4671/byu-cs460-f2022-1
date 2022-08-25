@@ -322,7 +322,7 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 ### Ethernet Frames
 
 See the documentation for the Link-Layer lab for
-[additional helps for Ethernet frames](https://github.com/cdeccio/byu-cs460-f2021/blob/master/lab-link-layer/README.md#ethernet-frames).
+[additional helps for Ethernet frames](../lab-link-layer/README.md#ethernet-frames).
 
 Note that there are libraries for parsing Ethernet frames and higher-level
 packets, but you may not use them for the lab.

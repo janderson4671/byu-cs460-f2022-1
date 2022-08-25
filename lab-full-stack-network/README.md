@@ -73,7 +73,7 @@ with native switches).
 
  - Integrate your implementations of the `Host` methods into `host.py`, using
    the `host.py` you created in the
-   [Network Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-network-layer).
+   [Network Layer Lab](../lab-network-layer).
    
    It is important that you integrate your code in the newer file,
    rather than simply overwriting the existing `host.py`; the existing file has been
@@ -117,10 +117,10 @@ implementation in the next step.
 
  - Integrate your implementations of the `ForwardingTable` methods into
    `forwarding_table.py`, using the `forwarding_table.py` you created in the
-   [Network Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-network-layer).
+   [Network Layer Lab](../lab-network-layer).
  - Integrate your implementations of the `IPAddress` and `Subnet` methods into
    `subnet.py`, using the `subnet.py` you created in the
-   [Network Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-network-layer).
+   [Network Layer Lab](../lab-network-layer).
 
 In both cases, it is important that you integrate your code in the newer file,
 rather than simply overwriting the existing file; the existing files have been
@@ -131,10 +131,10 @@ updated for use with this lab.  Specifically:
  - The `intf` argument to `ForwardingTable.add_entry()` can now be `None`, to
    match the behavior of the `ForwardingTableNative` class you interfaced with
    in the
-   [Routing Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-routing).
+   [Routing Lab](../lab-routing).
  - Additional methods have been added to the `ForwardingTable` class to match
    the behavior of the `ForwardingTableNative` class you interfaced with in the
-   [Routing Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-routing).
+   [Routing Lab](../lab-routing).
 
 
 To test the functionality of subnet-level broadcasts with the help of your
@@ -170,15 +170,15 @@ that each of these was received by the destination.
 
  - Copy the `transporthost.py` file containing the working implementation of
    the `TransportHost` class that you created in the
-   [Transport Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer).
+   [Transport Layer Lab](../lab-transport-layer).
    to `transporthost.py`.
  - Copy the `headers.py` file containing the working implementation of the `IPv4Header`, `UDPHeader`, and
    `TCPHeader` classes that you created in
-   [Transport Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer).
+   [Transport Layer Lab](../lab-transport-layer).
    to `headers.py`.
  - Integrate your implementation of the `UDPSocket` into `mysocket.py`, using
    the `mysocket.py` you created in the
-   [Transport Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer).
+   [Transport Layer Lab](../lab-transport-layer).
    Integration of your `TCPSocket` implementation will come at a later step.
 
 
@@ -187,7 +187,7 @@ that each of these was received by the destination.
  - Integrate your distance vector (DV) routing implementation from the
    `DVRouter` class into `dvrouter.py`, using the `dvrouter.py` you created in
    the
-   [Routing Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-routing).
+   [Routing Lab](../lab-routing).
 
    It is important that you integrate your code in the newer file, rather than
    simply overwriting the existing file; the existing file has been updated for
@@ -202,7 +202,7 @@ that each of these was received by the destination.
 
 
  - In the
-   [Routing Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-routing).
+   [Routing Lab](../lab-routing).
    each router announced its IP addresses (i.e., in the DV), such that each
    learned the shortest distance (and next hop) associated with a set of IP
    addresses--or /32 networks.  This was to simplify implementation and to
@@ -239,7 +239,7 @@ that each of these was received by the destination.
    This is really just the first "address" in the prefix.  That means that it
    is just a matter of applying the `IPAddress.mask()` method that you created
    for the
-   [Network Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-network-layer).
+   [Network Layer Lab](../lab-network-layer).
    This preserves only the left-most `prefix_len` bits of the IP address (i.e.,
    the "network" portion of the address), where `prefix_len` is the length of
    the IP prefix associated with the IP address; the balance of the bits (i.e.,
@@ -286,13 +286,13 @@ by the destination.
 
  - Copy the `buffers.py` file containing the working implementation of the
    `TCPSendBuffer` and `TCPReceiveBuffer` classes that you created in the
-   [TCP Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-tcp-reliable-transport).
+   [TCP Lab](../lab-tcp-reliable-transport).
    to `buffer.py`.
  - Integrate your TCP implementation from the `TCPSocket` class into
    the `mysocket.py` file, using the `mysocket.py` you created in the
-   [Transport Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer).
+   [Transport Layer Lab](../lab-transport-layer).
    _and_ the `mysocket.py` you created in the
-   [TCP Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-tcp-reliable-transport).
+   [TCP Lab](../lab-tcp-reliable-transport).
    The former will have the methods for the TCP three-way handshake, and the
    latter will have the methods for reliable transport.
 
@@ -302,7 +302,7 @@ by the destination.
    additional arguments for a more full-featured and flexible TCP
    implementation.
  - In the
-   [Transport Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-transport-layer)
+   [Transport Layer Lab](../lab-transport-layer)
    you implemented TCP's three-way handshake by fleshing out (among others) the
    `TCPSocket.handle_syn()` and `TCPSocket.handle_synack()` methods.  In those
    methods the initial sequence number of the client and that of the server are
@@ -310,7 +310,7 @@ by the destination.
    no data was exchanged, so there was no need to initialize a receive buffer.
 
    In the
-   [TCP Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-tcp-reliable-transport)
+   [TCP Lab](../lab-tcp-reliable-transport)
    data was reliably exchanged, but instead of using a three-way handshake to
    exchange initial sequence numbers, they were manually set using the
    `TCPSocket.bypass_handshake()` method.
@@ -363,7 +363,7 @@ The scripts associated with this configuration do the following:
 
  - Copy the `switch.py` file containing the working implementation of the `Switch`
    class that you created in the
-   [Link Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/tree/master/lab-link-layer).
+   [Link Layer Lab](../lab-link-layer).
    to `switch.py`.
 
 
