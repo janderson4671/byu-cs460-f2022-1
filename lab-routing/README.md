@@ -58,7 +58,7 @@ The files given to you for this lab are the following:
 
    Nonetheless, with just a bit of effort, you _could_ drop in your `host.py`
    from the
-   [Network-Layer Lab](https://github.com/cdeccio/byu-cs460-f2021/blob/master/lab-network-layer/),
+   [Network-Layer Lab](../lab-network-layer/),
    and have `DVRouter` inherit from that instead of from `BaseFrameHandler`.
    Then, if you
    [configure the host](https://github.com/cdeccio/cougarnet/blob/main/README.md#network-configuration-file)
