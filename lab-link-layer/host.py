@@ -42,6 +42,7 @@ class HostA(Host):
         # send packet from a to broadcast at time 7
         # send packet from a to e at time 9 and time 11
         loop = asyncio.get_event_loop()
+        loop.call_later(3, self.log, 'START')
         loop.call_later(4, self.send_icmp_echo, *a_to_c)
         loop.call_later(6, self.send_icmp_echo, *a_to_c)
         loop.call_later(7, self.send_icmp_echo, *a_to_broadcast)
