@@ -41,7 +41,8 @@ this environment.
 3. Start VirtualBox, and click "New" to create a new VM.  Give the machine 2GB
    (2048 MB) of RAM and a dynamically-allocated hard drive with at least 20GB
    of disk space.  Using the default for the other options should be fine.
-   Start the VM using the install image (`.iso` file) you downloaded.
+   Start the VM, and select the install image (`.iso` file) you downloaded when
+   prompted for a startup disk.
 
 4. Go through the installation using all the default options (you will have to
    explicitly select "yes" to write changes to disk), until you come to the
