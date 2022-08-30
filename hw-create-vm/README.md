@@ -178,15 +178,20 @@ this environment.
    For M1/M2 hardware, use the arm64 architecture.  For anything else, use
    amd64.
 
-4. Start UTM, then:
+4. Start UTM, then do the following:
 
    a. Click "Create a New Virtual Machine", then "Virtualize", then "Linux".
+
    b. Under "Boot ISO Image", click "Browse", then select the install image
       (`.iso` file) you downloaded.  Then click "Continue".
+
    c. Select 2048 MB RAM, then click "Continue".
+
    d. Specify at least 20GB, then click "Continue".
+
    e. Select a directory that will be shared between the guest OS and your VM.
       Then click "Continue".
+
    f. Click "Play".
 
 5. Follow steps 4 and 5 from the [VirtualBox instructions](#virtualbox-amd64-only).
