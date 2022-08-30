@@ -188,7 +188,7 @@ $ brew install utm qemu
       Then click "Continue".
    f. Click "Play".
 
-5. Follow steps 4 and 5 from the [VirtualBox instructions](#virtualbox--amd64-only).
+5. Follow steps 4 and 5 from the [VirtualBox instructions](#virtualbox-amd64-only).
    Before rebooting (step 5), do the following to "remove" the install CD.
    Click the "Drive Image Options" button, select "CD/DVD (ISO) Image", then click
    "Eject".
@@ -224,7 +224,7 @@ $ brew install utm qemu
     directory on the host.
 
 9. Follow steps 13 through 17 from the
-   [VirtualBox instructions](#virtualbox--amd64-only).
+   [VirtualBox instructions](#virtualbox-amd64-only).
 
 10. If you prefer to develop on your host OS, and the WebDAV option seems slow,
     here is an alternate way to configure your setup:
