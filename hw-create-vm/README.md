@@ -8,9 +8,26 @@ affect other applications on a working system.  Second, running the framework
 requires root (administrator) privileges, which you typically don't want to use
 to run applications on a more general system.
 
+VirtualBox is the only VM platform that has been tested.  Another VM platform
+(e.g., Parallels, VMware, UTM/Qemu) might work, but should be considered
+experimental.  Also, you would need to adapt any of the instructions (below)
+that are specific to VirtualBox to your chosen VM platform.  Note that
+VirtualBox will not run on Apple M1/M2 hardware.  We have included a set of
+_experimental_ instructions for running UTM/Qemu on M1/M2 laptops below.
+
+In summary, you have the following choices for VM platform:
+
+ - Install VirtualBox on your personal system, if supported by your
+   architecture.
+ - Use the VirtualBox software installed on the CS lab machines.
+ - (Experimental) Use an alternate VM platform on your personal system.
+
 Generally you might select almost any distribution of Linux.  However, for this
 class I am asking that you use Debian because the framework has been tested in
 this environment.
+
+
+## VirtualBox (amd64 only)
 
 1. Download and install
    [VirtualBox](https://www.virtualbox.org/wiki/Downloads).
@@ -18,25 +35,15 @@ this environment.
    Alternatively, you may use the VirtualBox that is already installed on the
    CS open lab machines.
 
-   Another VM platform (e.g., Parallels, VMware, Qemu) might work in lieu of
-   VirtualBox, but only VirtualBox has been tested.  Also, you will need to
-   adapt any VirtualBox-specific instructions to your chosen platform.
-
-   Note: VirtualBox will not run on Apple M1/M2 hardware.  If you are running
-   on Apple M1/M2, you will need to use an alternative VM platform.
-
-2. Download the "netinst" (net install) image from
+2. Download the "netinst" (net install) image with amd64 architecture from
    [Debian](https://www.debian.org/releases/stable/debian-installer/).
-   In almost all cases, you will want the amd64 architecture.  If you are
-   bravely using Apple M1/M2 hardware, you will want to use the arm64
-   architecture.
 
 3. Start VirtualBox, and click "New" to create a new VM.  Give the machine 2GB
    (2048 MB) of RAM and a dynamically-allocated hard drive with at least 20GB
    of disk space.  Using the default for the other options should be fine.
+   Start the VM using the install image (`.iso` file) you downloaded.
 
-4. Start the VM using the install image (`.iso` file) you downloaded.  Go
-   through the installation using all the default options (you will have to
+4. Go through the installation using all the default options (you will have to
    explicitly select "yes" to write changes to disk), until you come to the
    "Software Selection" menu.  At that menu, un-check the "GNOME" box, and
    check the "LXDE" box. LXDE provides a lightweight desktop environment that
@@ -155,3 +162,85 @@ this environment.
     installed on your host to manipulate files in `/home/username/host` or some
     subfolder thereof.  Thus, you do not have to develop within the VM itself if you
     do not want to.
+
+
+## UTM/Qemu on MacOS (Experimental)
+
+1. Install [Homebrew](https://brew.sh/).
+
+2. Install qemu and utm:
+```bash
+$ brew install utm qemu
+```
+
+3. Download the "netinst" (net install) image from
+   [Debian](https://www.debian.org/releases/stable/debian-installer/).
+   For M1/M2 hardware, use the arm64 architecture.  For anything else, use
+   amd64.
+
+4. Start UTM, then:
+   a. Click "Create a New Virtual Machine", then "Virtualize", then "Linux".
+   b. Under "Boot ISO Image", click "Browse", then select the install image
+      (`.iso` file) you downloaded.  Then click "Continue".
+   c. Select 2048 MB RAM, then click "Continue".
+   d. Specify at least 20GB, then click "Continue".
+   e. Select a directory that will be shared between the guest OS and your VM.
+      Then click "Continue".
+   f. Click "Play".
+
+5. Follow steps 4 and 5 from the [VirtualBox instructions](#virtualbox--amd64-only).
+   Before rebooting (step 5), do the following to "remove" the install CD.
+   Click the "Drive Image Options" button, select "CD/DVD (ISO) Image", then click
+   "Eject".
+
+6. Within the guest OS, open a terminal, and run the following from the command
+   to install utilities for allowing the host to interact with the guest:
+
+   ```bash
+   $ sudo apt install spice-vdagent spice-webdavd
+   $ sudo apt install nautilus
+   ```
+
+7. Reboot your VM to have the changes take effect.
+
+8. From the menu, click "Accessories" then "Files" to open Nautilus.  Click
+   "Other Locations", then "Spice client folder".  Then run the following from
+    a terminal:
+
+    ```bash
+    $ ln -s /run/user/`id -u`/gvfs/dav+sd:host=Spice%2520client%2520folder._webdav._tcp.local ~/host
+    ```
+
+    By clicking "Spice client folder" in Nautilus, you mounted (i.e., made
+    accessible) a special "drive" from which you can access your host's files
+    over a protocol called WebDAV.  Because its default location is long and
+    messy (`/run/user/...`), we used `ln -s` to create a symbolic link (i.e.,
+    an alias) to that folder in your home folder, named simply "host".  That
+    is, if you run the following:
+    ```bash
+    $ ls ~/host
+    ```
+    You should be able to see the directory contents in the corresponding
+    directory on the host.
+
+9. Follow steps 13 through 17 from the
+   [VirtualBox instructions](#virtualbox--amd64-only).
+
+10. If you prefer to develop on your host OS, and the WebDAV option seems slow,
+    here is an alternate way to configure your setup:
+
+    a. Run the following on your guest to install an SSH server:
+       ```bash
+       $ sudo apt install ssh
+       ```
+    b. Capture your IP address by running the following
+       ```bash
+       $ ip addr | awk '/^[[:space:]]+inet[[:space:]]/ { print $2 }' | sed -n '/^127/b;s:/[[:digit:]]\+::;
+       ```
+       This just basically picks the only non-loopback IP address and prints it
+       out, minus its prefix (which we will learn about).
+
+    c. Follow the instructions
+       [here](https://github.com/kentseamons/byu-cs324-f2022/tree/master/contrib/vscode-setup),
+       using the username you created for your VM and the IP address of your VM
+       in place of "schizo.cs.byu.edu", in every instance.
