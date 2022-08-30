@@ -169,9 +169,9 @@ this environment.
 1. Install [Homebrew](https://brew.sh/).
 
 2. Install qemu and utm:
-```bash
-$ brew install utm qemu
-```
+   ```bash
+   $ brew install utm qemu
+   ```
 
 3. Download the "netinst" (net install) image from
    [Debian](https://www.debian.org/releases/stable/debian-installer/).
@@ -179,6 +179,7 @@ $ brew install utm qemu
    amd64.
 
 4. Start UTM, then:
+
    a. Click "Create a New Virtual Machine", then "Virtualize", then "Linux".
    b. Under "Boot ISO Image", click "Browse", then select the install image
       (`.iso` file) you downloaded.  Then click "Continue".
@@ -217,9 +218,11 @@ $ brew install utm qemu
     messy (`/run/user/...`), we used `ln -s` to create a symbolic link (i.e.,
     an alias) to that folder in your home folder, named simply "host".  That
     is, if you run the following:
+
     ```bash
     $ ls ~/host
     ```
+
     You should be able to see the directory contents in the corresponding
     directory on the host.
 
@@ -230,13 +233,17 @@ $ brew install utm qemu
     here is an alternate way to configure your setup:
 
     a. Run the following on your guest to install an SSH server:
+
        ```bash
        $ sudo apt install ssh
        ```
+
     b. Capture your IP address by running the following
+
        ```bash
        $ ip addr | awk '/^[[:space:]]+inet[[:space:]]/ { print $2 }' | sed -n '/^127/b;s:/[[:digit:]]\+::;
        ```
+
        This just basically picks the only non-loopback IP address and prints it
        out, minus its prefix (which we will learn about).
 
