@@ -32,12 +32,15 @@ VLAN 30.
 Run the following command to create and start the network:
 
 ```bash
-$ cougarnet --wireshark a-s1,b-s1,c-s1,d-s2,e-s2,f-s2 --display h6-s2-vlan.cfg
+$ cougarnet --wireshark a-s1,b-s1,c-s1,d-s2,e-s2,f-s2 --display --disable-ipv6 h6-s2-vlan.cfg
 ```
 
 The `--display` option tells Cougarnet to print out the network layout before
-starting all the hosts.  The `--wireshark` option tells Cougarnet to open
-Wireshark and begin capturing on the following interfaces:
+starting all the hosts.  The `--disable-ipv6` option disables IPv6 because an
+IPv6-enabled host introduces packets into the network that will cause our
+switch to learn things from packets other than those we explicitly place on the
+network.  The `--wireshark` option tells Cougarnet to open Wireshark and begin
+capturing on the following interfaces:
 
  * `a-s1` (host `a`'s interface that connects it to `s1`)
  * `b-s1` (host `b`'s interface that connects it to `s1`)
@@ -163,7 +166,7 @@ s1$ sudo ovs-appctl fdb/flush s2
     the following:
    
     ```bash
-    $ cougarnet --display h6-s2-vlan.cfg
+    $ cougarnet --display --disable-ipv6 h6-s2-vlan.cfg
     ```
 
     Note that you haven't enabled firewalls as you did
@@ -188,7 +191,7 @@ s1$ sudo ovs-appctl fdb/flush s2
     configuration with:
     
     ```bash
-    $ cougarnet --display h6-s2.cfg
+    $ cougarnet --display --disable-ipv6 h6-s2.cfg
     ```
 
     Now run the following from host `b`:
