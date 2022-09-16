@@ -48,6 +48,7 @@ capturing on the following interfaces:
  * `d-s2` (host `d`'s interface that connects it to `s2`)
  * `e-s2` (host `e`'s interface that connects it to `s2`)
  * `f-s2` (host `f`'s interface that connects it to `s2`)
+ * `s1-s2` (host `s1`'s interface that connects it to `s2`)
 
 Because of the current configuration, you will only see three terminals show
 up, one associated with host `b`, one associated with host `e`, and one
