@@ -32,7 +32,7 @@ VLAN 30.
 Run the following command to create and start the network:
 
 ```bash
-$ cougarnet --wireshark a-s1,b-s1,c-s1,d-s2,e-s2,f-s2 --display --disable-ipv6 h6-s2-vlan.cfg
+$ cougarnet --wireshark a-s1,b-s1,c-s1,d-s2,e-s2,f-s2,s1-s2 --display --disable-ipv6 h6-s2-vlan.cfg
 ```
 
 The `--display` option tells Cougarnet to print out the network layout before
