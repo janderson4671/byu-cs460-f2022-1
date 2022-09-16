@@ -13,13 +13,13 @@ class Switch(BaseHost):
         print('Received frame: %s' % repr(frame))
 
 def main():
-    switch = Switch()
+    with Switch() as switch:
 
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_forever()
-    finally:
-        loop.close()
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()
