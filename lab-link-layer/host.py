@@ -80,14 +80,14 @@ def main():
     else:
         cls = Host
 
-    host = cls()
-    host.schedule_items()
+    with cls() as host:
+        host.schedule_items()
 
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_forever()
-    finally:
-        loop.close()
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()
