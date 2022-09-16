@@ -49,6 +49,7 @@ class HostA(Host):
         loop.call_later(9, self.send_icmp_echo, *a_to_e)
         loop.call_later(11, self.send_icmp_echo, *a_to_e)
         loop.call_later(15, self.send_icmp_echo, *a_to_c)
+        loop.call_later(16, self.log, 'STOP')
 
 class HostC(Host):
     def schedule_items(self):
