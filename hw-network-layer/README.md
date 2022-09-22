@@ -282,7 +282,7 @@ option).
 Stop `cougarnet` by entering `ctrl`-`c` at the terminal where it was launched.
 
 
-# Part 2 - ARP and IP Forwarding
+# Part 2 - ICMP Error Messages and Fragmentation
 
 ## Start the Network
 
