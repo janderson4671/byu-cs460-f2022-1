@@ -26,6 +26,7 @@ and a router!
    - [Instructions](#instructions-2)
    - [Testing](#testing-1)
    - [Helps](#helps-1)
+ - [Automated Testing](#automated-testing)
  - [General Helps](#general-helps)
  - [Putting the Pieces Together (Optional)](#putting-the-pieces-together-optional)
  - [Submission](#submission)
@@ -722,6 +723,20 @@ instances.  The packet that you will be receiving looks like this:
 See the help on
 [Address Representation Conversion](#address-representation-conversion) above.
 above.
+
+
+## Automated Testing
+
+(Driver not yet ready.  Please check back.)
+
+For your convenience, a [script](driver.py) is also provided for automated
+testing.  This is not a replacement for manual testing but can be used as a
+sanity check.  You can use it by simply running the following in the working
+directory:
+
+```
+./driver.py
+```
 
 
 # General Helps
