@@ -332,25 +332,32 @@ Your code will need to both create ARP packets for sending and parse ARP
 packets that have been received on the "wire".  ARP packets have the following
 format:
 
-| Offset | Byte 0 | Byte 1 |
-| :---: | :---: | :---: |
-| 0 <td colspan=2> Hardware Type
-| 2 <td colspan=2> Protocol Type
-| 4 | Hardware Address Length | Protocol Address Length |
-| 6 <td colspan=2>operation
-| 8 <td colspan=2>Sender hardware address (bytes 0 - 1)
-| 10 <td colspan=2>Sender hardware address (cont'd) (bytes 2 - 3)
-| 12 <td colspan=2>Sender hardware address (cont'd) (bytes 4 - 5)
-| 14 <td colspan=2>Sender protocol address (bytes 0 - 1)
-| 16 <td colspan=2>Sender protocol address (cont'd) (bytes 2 - 3)
-| 18 <td colspan=2>Target hardware address (bytes 0 - 1)
-| 20 <td colspan=2>Target hardware address (cont'd) (bytes 2 - 3)
-| 22 <td colspan=2>Target hardware address (cont'd) (bytes 4 - 5)
-| 24 <td colspan=2>Target protocol address (bytes 0 - 1)
-| 26 <td colspan=2>Target protocol address (cont'd) (bytes 2 - 3)
+<table border="1">
+<tr>
+<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
+<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
+<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
+<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
+<tr>
+<td colspan="16">Hardware type</td>
+<td colspan="16">Protocol type</td></tr>
+<tr>
+<td colspan="8">Hardware address length</td>
+<td colspan="8">Protocol address length</td>
+<td colspan="16">Opcode</td></tr>
+<tr>
+<td colspan="32">Source hardware address :::</td></tr>
+<tr>
+<td colspan="32">Source protocol address :::</td></tr>
+<tr>
+<td colspan="32">Destination hardware address :::</td></tr>
+<tr>
+<td colspan="32">Destination protocol address :::</td></tr>
+<tr>
+<td colspan="32">Data :::</td></tr>
+</table>
 
-(if this table doesn't render well, check out the
-[wikipedia page for ARP](https://en.wikipedia.org/wiki/Address_Resolution_Protocol).)
+(See also http://www.networksorcery.com/Enp/protocol/arp.htm)
 
 Regarding the fields:
  - Hardware Type will always be Ethernet (`ARPHRD_ETHER = 1`)
