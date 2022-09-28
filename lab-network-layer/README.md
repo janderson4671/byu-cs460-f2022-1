@@ -53,14 +53,14 @@ Cougarnet [here](https://github.com/cdeccio/cougarnet/blob/main/README.md).
 The files given to you for this lab are the following:
  - `host.py` - a file containing a stub implementation of a host (and router).
    This is where you will do your work!
- - `subnet.py` - a file containing a stub code for IP address comparison and
+ - `prefix.py` - a file containing a stub code for IP address comparison and
    testing whether an IP address is a member of a subnet.  You will also do
    your work here!
  - `forwarding_table.py` - a file containing a stub implementation of an IP
    forwarding table.  You will also do your work here!
  - `scenario1.cfg` and `scenario2.cfg` -
    [network configuration files](https://github.com/cdeccio/cougarnet/blob/main/README.md#network-configuration-file)
-   describing three topologies for testing different aspects of functionality
+   describing two topologies for testing different aspects of functionality
    related to this lab.
  - `scenario1.py` and `scenario2.py` -
    scripts that run various tests in conjunction with the network configuration
@@ -126,7 +126,7 @@ corresponding to Host `a`.  The output is made by placeholder code in
 it would do.  What is missing at this point is:
 
  - a mechanism to map the IP address of the next hop to a MAC address - ARP!;
- - an Ethernet frame header to encapsulate the IP packet;
+ - an Ethernet frame header to encapsulate the IP packet; and
  - some logic to determine which frames should be acted upon
 
 When these things are added, you will be able to send IP packets across a local
@@ -175,7 +175,7 @@ In the file `host.py`, flesh out following the skeleton methods related to ARP:
    - `intf`: the name of an interface on the host, on which the packet will be
      sent.
    - `next_hop`: the IP address of the next hop for to the packet, which is
-     either the IP destination, if on the same subnet as the host, or the IP
+     either the IP destination--if on the same subnet as the host--or the IP
      address of a router.
 
    The method should do the following:
@@ -204,7 +204,7 @@ In the file `host.py`, flesh out following the skeleton methods related to ARP:
      - queue the packet, along with interface and next hop, for later sending
      - create an [ARP request](#arp-packets), such that:
        - The sender IP address is the IP address associated with the outgoing
-	 interface.  This can be found with the `int_to_info`
+         interface.  This can be found with the `int_to_info`
          [attribute](https://github.com/cdeccio/cougarnet/blob/main/README.md#baseframehandler)
          of the host.
        - The sender MAC address is the MAC address corresponding to the outgoing
@@ -265,7 +265,7 @@ In the file `host.py`, flesh out following the skeleton methods related to ARP:
      - The ARP response packet as the Ethernet payload.
 
  - `handle_arp_response()`.  This method takes the same arguments as
-   `handle_arp()`:
+   `handle_arp()`.
 
    The method should do the following:
 
@@ -324,9 +324,6 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 See the documentation for the Link-Layer lab for
 [additional helps for Ethernet frames](../lab-link-layer/README.md#ethernet-frames).
 
-Note that there are libraries for parsing Ethernet frames and higher-level
-packets, but you may not use them for the lab.
-
 
 ### ARP Packets
 
@@ -361,10 +358,12 @@ Regarding the fields:
    long)
  - Protocol Address Length will always be 4 (IPv4 addresses are four bytes
    long)
- - Operation (or opcode) will either be request (`ARPOP_REQUEST = 1`) or reply (`ARPOP_REPLY = 2`).
+ - Operation (or opcode) will either be request (`ARPOP_REQUEST = 1`) or reply
+   (`ARPOP_REPLY = 2`).
  - While "Hardware" and "Protocol" are the more generic terms for the fields,
    they are referred to in the instructions as "MAC" and "IP" since those are
    the protocols we are working with.
+
 
 ### Address Representation Conversion
 
@@ -382,6 +381,7 @@ imported in your `host.py`:
  - `ip_str_to_binary()` - takes a `str` instance of an IP address in
    human-readable format and returns a `bytes` instance of the IP address.
 
+
 # Part 2 - Forwarding Table
 
 In this part of the lab, you will create a working forwarding table for use in
@@ -390,7 +390,7 @@ your hosts and routers.
 
 ## Getting Started
 
-Take a look at both `subnet.py` and `forwarding_table.py`.  Both have starter
+Take a look at both `prefix.py` and `forwarding_table.py`.  Both have starter
 code that needs to be fleshed out.  But that starter code comes after a lot of
 other stuff at the beginning of the file.  This other stuff is doctests.
 [doctests](https://docs.python.org/3/library/doctest.html), are "pieces
@@ -404,34 +404,50 @@ before you begin, as it might be easier for you to do one before the other.
 
 ## Instructions
 
- 1. Fill out the following methods (marked with `FIXME`):
+ 1. Fill out the following functions (marked with `FIXME`) in `prefix.py`:
 
-    - `IPAddress.mask()` (approx. 1 - 2 lines of code)
-    - `Subnet.__contains__()` (approx. 1 - 2 lines of code)
+    - `ip_prefix_mask()`
+    - `ip_prefix()`
+    - `ip_prefix_total_addresses()`
+    - `ip_prefix_nth_address()`
+    - `ip_prefix_last_address()`
 
-    These methods are short but require a bit of thought.
+    These functions are short (approximately 1 - 2 lines of code) but require a
+    bit of thought.
 
- 2. Fill in the appropriate return value for each of the doctests for
-    `Subnet.__contains__()` in `subnet.py`.  `None` is currently used as a
-    placeholder for each output, but the return value _should_ be a boolean
-    (`True` or `False`).  You might also choose to create a doctest for
-    `IPAddress.mask()`, to check your work, but it is not required.
+    A doctest is provided in the docstring of each of these functions, so you can
+    see how they are called and what correct output looks.  Additionally, you
+    can test functionality with the following command:
 
-    When you have finished your revisions of `subnet.py`:
+    ```
+    python3 -m doctest prefix.py
+    ```
+
+    At this point, the following should run without error (and without output):
+    ```
+    python3 -m doctest prefix.py
+    ```
+
+ 2. Fill out the method `Prefix.__contains__()`.
+
+ 3. Fill in the appropriate return value for each of the doctests for
+    `Prefix.__contains__()` at the top of `prefix.py`.  `False` is currently
+    used as a placeholder for each output, but the return value will be either
+    `True` or `False`.
 
     - The return values in the doc tests must be correct; and
     - The following should run without error (and without output):
       ```
-      python3 -m doctest subnet.py
+      python3 -m doctest prefix.py
       ```
 
- 3. Fill out the following method (marked with `FIXME`):
+ 4. Fill out the following method (marked with `FIXME`):
 
     - `ForwardingTable.get_forwarding_entry()` (approx. 10 lines of code)
 
       Remember to use longest prefix match!
 
- 4. Fill in the appropriate return value for each of the doctests for
+ 5. Fill in the appropriate return value for each of the doctests for
     `ForwardingTable.get_forwarding_entry()` in `forwarding_table.py`.
     `('someintf', 'someip')` is currently used as a placeholder for each
     output, but the return value _should_ yield a tuple of type (`str`, `str`),
@@ -451,6 +467,7 @@ before you begin, as it might be easier for you to do one before the other.
     ```
     python3 -m doctest forwarding_table.py
     ```
+
 
 # Part 3 - IP Forwarding
 
@@ -536,6 +553,7 @@ listed.
  - 16 seconds: packet sent from `a` to `l` with TTL=1
    - A router drops packets whose TTL is 0 after decrementing
 
+
 ## Instructions
 
 In the file `host.py`, flesh out following the skeleton methods related to IP
@@ -606,9 +624,12 @@ forwarding:
    - Parse out the destination IP address in the packet.
    - If the destination IP address matches _any_ of the IP addresses on
      the host (i.e., not limited to the IP address on the incoming interface),
-     or if the destination IP address is the broadcast IP address
-     (`255.255.255.255`), then call another method to handle the payload,
-     depending on the protocol value in the IP header:
+     or if the destination IP address is the broadcast IP address for that
+     subnet, then call another method to handle the payload, depending on the
+     protocol value in the IP header.  The broadcast address for the subnet is
+     simply the last IP address in the subnet, i.e., the IP address with all
+     the "host" bits set.  You will find the `ip_prefix_last_address()`
+     function useful for this.
      - For type TCP (`IPPROTO_TCP = 6`), call `handle_tcp()`, passing the full
        IP datagram, including header.
      - For type UDP (`IPPROTO_UDP = 17`), call `handle_udp()`, passing the full
@@ -667,10 +688,33 @@ Your code will need to parse IPv4 packets, both as received from the "wire" and
 as passed by a method (e.g., `send_packet()`)--in both cases as `bytes`
 instances.  The packet that you will be receiving looks like this:
 
-![IPv4 Datagram](ipv4-header-white.png)
-
-(Taken from the
-[wikipedia page for IPv4](https://en.wikipedia.org/wiki/IPv4)
+<table border="1">
+<tr>
+<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
+<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
+<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
+<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
+<tr>
+<td colspan="4">Version</td>
+<td colspan="4">IHL</td>
+<td colspan="8">Differentiated Services</td>
+<td colspan="16">Total length</td></tr>
+<tr>
+<td colspan="16">Identification</td>
+<td colspan="3">Flags</td>
+<td colspan="13">Fragment offset</td></tr>
+<tr>
+<td colspan="8">TTL</td>
+<td colspan="8">Protocol</td>
+<td colspan="16">Header checksum</td></tr>
+<tr>
+<td colspan="32">Source IP address</td></tr>
+<tr>
+<td colspan="32">Destination IP address</td></tr>
+<tr>
+<td colspan="32">Options and padding :::</td></tr>
+</table>
+(See also http://www.networksorcery.com/Enp/protocol/ip.htm)
 
 
 ### Address Representation Conversion
@@ -692,11 +736,14 @@ above.
  - You can modify `scenario1.py`, `scenario2.py`, and the corresponding
    configuration files all you want for testing and for experimentation.  If
    this helps you, please do it!  Just note that your submission will be graded
-   using only your `host.py`, `subnet.py`, and `forwarding_table.py`. The other
+   using only your `host.py`, `prefix.py`, and `forwarding_table.py`. The other
    files used will be the stock files [you were provided](#resources-provided).
- - Save your work often, especially after you move from part to part.  Part 2.
-   You are welcome (and encouraged) to use a version control repository, such
-   as GitHub.  However, please ensure that it is a private repository!
+ - Save your work often, especially as you move from part to part.  You are
+   encouraged to
+   [commit your changes](../contrib/github-repo-mirror/README.md#commit-and-push-local-changes-to-private-repo).
+   to the private GitHub repository that you created
+   [in an earlier assignment](../contrib/github-repo-mirror/README.md).
+   Please ensure that it remains private!
 
 
 # Putting the Pieces Together (Optional)
@@ -721,6 +768,6 @@ it, and tar it up:
 
 ```
 $ mkdir network-lab
-$ cp host.py subnet.py forwarding_table.py network-lab
+$ cp host.py prefix.py forwarding_table.py network-lab
 $ tar -zcvf network-lab.tar.gz network-lab
 ```

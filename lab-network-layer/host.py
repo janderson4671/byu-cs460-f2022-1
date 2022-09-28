@@ -1,12 +1,17 @@
 #!/usr/bin/python3
 
+import argparse
+import asyncio
 import os
 import socket
+import sys
 
-from cougarnet.rawpkt import BaseFrameHandler
+from cougarnet.sim.host import BaseHost
 from cougarnet.util import \
         mac_str_to_binary, mac_binary_to_str, \
         ip_str_to_binary, ip_binary_to_str
+
+from forwarding_table import ForwardingTable
 
 #From /usr/include/linux/if_ether.h:
 ETH_P_IP = 0x0800 # Internet Protocol packet
@@ -21,7 +26,7 @@ ARPOP_REPLY = 2 # ARP reply
 IPPROTO_TCP = 6 # Transmission Control Protocol
 IPPROTO_UDP = 17 # User Datagram Protocol
 
-class Host(BaseFrameHandler):
+class Host(BaseHost):
     def __init__(self, ip_forward):
         super(Host, self).__init__()
 
@@ -64,3 +69,20 @@ class Host(BaseFrameHandler):
 
     def not_my_packet(self, pkt, intf):
         pass
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--router', '-r',
+            action='store_const', const=True, default=False,
+            help='Act as a router by forwarding IP packets')
+    args = parser.parse_args(sys.argv[1:])
+
+    with Host(args.router) as host:
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
+
+if __name__ == '__main__':
+    main()
