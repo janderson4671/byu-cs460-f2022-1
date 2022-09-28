@@ -326,6 +326,12 @@ See the documentation for the Link-Layer lab for
 [additional helps for Ethernet frames](../lab-link-layer/README.md#ethernet-frames).
 
 
+### Working with `bytes` Instances
+
+See the documentation for the Link-Layer lab for
+[additional helps on working with bytes instances](../lab-link-layer/README.md#working-with-bytes-instances).
+
+
 ### ARP Packets
 
 Your code will need to both create ARP packets for sending and parse ARP
