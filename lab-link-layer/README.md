@@ -17,6 +17,7 @@ implementing a link-layer switch!
    - [Part 1 - Link-Layer Forwarding and Learning](#part-1---link-layer-forwarding-and-learning)
    - [Part 2 - VLANs and Trunking](#part-2---vlans-and-trunking)
  - [Automated Testing](#automated-testing)
+ - [Evaluation](#evaluation)
  - [Helps](#helps)
    - [Ethernet Frames](#ethernet-frames)
    - [Working with `bytes` Instances](#working-with-bytes-instances)
@@ -359,7 +360,7 @@ You can also use the driver provided for
 [automated testing](#automated-testing).
 
 
-## Automated Testing
+# Automated Testing
 
 For your convenience, a [script](driver.py) is also provided for automated
 testing.  This is not a replacement for manual testing but can be used as a
@@ -369,6 +370,16 @@ directory:
 ```
 ./driver.py
 ```
+
+# Evaluation
+
+Your score will be computed out of a maximum of 100 points based on the
+following distribution:
+
+ - Part 1: 60 points
+   - 30 points for scenario 1
+   - 30 points for scenario 2
+ - Part 2: 40 points
 
 
 # Helps
