@@ -27,6 +27,7 @@ and a router!
    - [Testing](#testing-1)
    - [Helps](#helps-1)
  - [Automated Testing](#automated-testing)
+ - [Evaluation](#evaluation)
  - [General Helps](#general-helps)
  - [Putting the Pieces Together (Optional)](#putting-the-pieces-together-optional)
  - [Submission](#submission)
@@ -738,18 +739,38 @@ See the help on
 above.
 
 
-## Automated Testing
-
-(Driver not yet ready.  Please check back.)
+# Automated Testing
 
 For your convenience, a [script](driver.py) is also provided for automated
-testing.  This is not a replacement for manual testing but can be used as a
-sanity check.  You can use it by simply running the following in the working
-directory:
+testing of parts 1 and 3.  This is not a replacement for manual testing but can
+be used as a sanity check.  You can use it by simply running the following in
+the working directory:
 
 ```
 ./driver.py
 ```
+
+
+# Evaluation
+
+Your score will be computed out of a maximum of 100 points based on the
+following distribution:
+
+ - Part 1: 40 points
+ - Part 2: 32 points
+   - 8 points for correct doctests in `prefix.py`
+   - 8 points for running the following without error:
+     ```
+     $ python -m doctest prefix.py
+     ```
+   - 8 points for correct doctests in `forwarding_table.py`
+   - 8 points for running the following without error:
+     ```
+     $ python -m doctest forwarding_table.py
+     ```
+ - Part 3: 28 points
+   - 22 points for first 11 tests (2 points each)
+   - 6 points for last test
 
 
 # General Helps
