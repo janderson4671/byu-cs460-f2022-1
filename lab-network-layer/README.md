@@ -750,6 +750,11 @@ the working directory:
 ./driver.py
 ```
 
+Please note that if you have _only_ completed part 1, then the driver will
+complain that `c` has not seen the ARP request from `r1` when running scenario
+1.  That's okay for part 1!  It's only important that `c` sees `r1`'s ARP
+request (and the subsequent ICMP message) _after_ you implement parts 2 and 3.
+
 
 # Evaluation
 
