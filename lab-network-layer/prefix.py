@@ -289,7 +289,8 @@ class Prefix:
         return str(self)
 
     def __str__(self):
-        return '%s/%d' % (ip_int_to_str(self.prefix), self.prefix_len)
+        return '%s/%d' % \
+                (ip_int_to_str(self.prefix, self.family), self.prefix_len)
 
     def __contains__(self, address):
         '''Return True if the address corresponding to this IP address is
