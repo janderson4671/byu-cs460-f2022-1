@@ -642,18 +642,30 @@ forwarding:
    The method should do the following:
 
    - Parse out the destination IP address in the packet.
-   - If the destination IP address matches _any_ of the IP addresses on
-     the host (i.e., not limited to the IP address on the incoming interface),
-     or if the destination IP address is the broadcast IP address for that
-     subnet, then call another method to handle the payload, depending on the
-     protocol value in the IP header.  The broadcast address for the subnet is
-     simply the last IP address in the subnet, i.e., the IP address with all
-     the "host" bits set.  You will find the `ip_prefix_last_address()`
-     function useful for this.
+   - Determine if this host is the final destination for the packet, based on
+     the destination IP address.  There are two ways in which this host might
+     qualify as the final destination:
+     - The destination IP address matches _any_ of the IP addresses on
+       the host (i.e., not limited to the IP address on the incoming
+       interface).  You can simply iterate through every interface and compare
+       the destination with the IP address(es) of each interface.
+     - The destination IP address matches the _broadcast_ IP address
+       of the subnet associated with the interface on which the packet arrived.
+       The broadcast address for the subnet is simply the last IP address in
+       the subnet, i.e., the IP address with all the "host" bits set.  Remember
+       that you can derive the IP prefix associated with a given interface by
+       using the IP address and prefix length found in the `int_to_info`
+       attribute of the host.  With the prefix in hand, you can use the
+       `ip_prefix_last_address()` function that you created.
+   - If the packet is destined for this host, based on the tests in the
+     previous bullet, then call another method to handle the payload, depending
+     on the protocol value in the IP header:
      - For type TCP (`IPPROTO_TCP = 6`), call `handle_tcp()`, passing the full
        IP datagram, including header.
      - For type UDP (`IPPROTO_UDP = 17`), call `handle_udp()`, passing the full
        IP datagram, including header.
+     Note that if the protocol is something other than TCP or UDP, you can
+     simply ignore it.
    - If the destination IP address does not match any IP address on the system,
      and it is not the IP broadcast, then call `not_my_packet()`, passing it
      the full IP datagram and the interface on which it arrived.
@@ -684,7 +696,8 @@ forwarding:
      call `forward_packet()`.
 
  - `handle_tcp()`, `handle_udp()`.  There is no need to
-   flesh out these methods.  They are simply placeholders for debugging.
+   flesh out these methods.  They are simply placeholders for a future lab.
+   However, you can place debugging code in them, if you find it helpful.
 
 
 ## Testing
