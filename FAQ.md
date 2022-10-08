@@ -25,3 +25,6 @@
    $ sudo umount /run/netns/foo
    $ sudo rm /run/netns/foo
    ```
+
+Rebooting the system will reset all of the issues mentioned above--except the
+existence of the Open vSwitch bridge (i.e., the one requiring `ovs-vsctl`).
