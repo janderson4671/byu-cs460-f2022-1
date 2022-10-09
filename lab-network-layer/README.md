@@ -553,7 +553,7 @@ listed.
    - `a` uses the IP destination as the next hop
 
  The next set of packets correspond to the tests in
- `forwarding_table.py` (see [Part 2](#part-2-forwarding-table)), so if your
+ `forwarding_table.py` (see [Part 2](#part-2---forwarding-table)), so if your
  doctests work, then these should work.
 
  - 5 seconds: packet sent from `a` to `10.20.0.25`
