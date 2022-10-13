@@ -1,3 +1,4 @@
+import asyncio
 import json
 import socket
 
@@ -5,11 +6,12 @@ NEIGHBOR_CHECK_INTERVAL = 3
 DV_TABLE_SEND_INTERVAL = 1
 DV_PORT = 5016
 
-from cougarnet.rawpkt import BaseFrameHandler
+from cougarnet.sim.host import BaseHost
 
+from prefix import *
 from forwarding_table_native import ForwardingTableNative as ForwardingTable
 
-class DVRouter(BaseFrameHandler):
+class DVRouter(BaseHost):
     def __init__(self):
         super(DVRouter, self).__init__()
 
@@ -20,13 +22,10 @@ class DVRouter(BaseFrameHandler):
 
         self._initialize_dv_sock()
 
-        self.event_loop = None
-
         # Do any further initialization here
 
-    def _initialize_dv_sock(self):
-        '''
-        Initialize the socket that will be used for sending and receiving DV
+    def _initialize_dv_sock(self) -> None:
+        '''Initialize the socket that will be used for sending and receiving DV
         communications to and from neighbors.
         '''
 
@@ -34,60 +33,56 @@ class DVRouter(BaseFrameHandler):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.sock.bind(('0.0.0.0', DV_PORT))
 
-    def init_dv(self, event_loop):
-        '''
-        Set up our instance to work with the event loop, initialize our DV, and
-        schedule our regular updates to be sent to neighbors.
+    def init_dv(self):
+        '''Set up our instance to work with the event loop, initialize our DV,
+        and schedule our regular updates to be sent to neighbors.
         '''
 
-        # assign event_loop variable, so we can use it to schedule
-        self.event_loop = event_loop
+        loop = asyncio.get_event_loop()
 
         # register our socket with the event loop, so we can handle datagrams
         # as they come in
-        self.event_loop.register_socket(self.sock, self._handle_msg)
+        loop.add_reader(self.sock, self._handle_msg, self.sock)
 
         # Initialize our DV -- and optionally send our DV to our neighbors
         self.update_dv()
 
         # Schedule self.send_dv_next() to be called every second
         # (DV_TABLE_SEND_INTERVAL)
-        self.event_loop.schedule_event(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
+        loop.call_later(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
 
-    def _handle_msg(self, sock):
-        '''
-        Receive and handle a message received on the UDP socket that is being
-        used for DV messages.
+
+    def _handle_msg(self, sock: socket.socket) -> None:
+        ''' Receive and handle a message received on the UDP socket that is
+        being used for DV messages.
         '''
 
         data, addrinfo = sock.recvfrom(65536)
-        return self.handle_dv_message(data)
+        self.handle_dv_message(data)
 
-    def _send_msg(self, msg, dst):
-        '''
-        Send a DV message, msg, on our UDP socket to dst.
-        '''
+    def _send_msg(self, msg: bytes, dst: str) -> None:
+        '''Send a DV message, msg, on our UDP socket to dst.'''
 
         self.sock.sendto(msg, (dst, DV_PORT))
 
-    def handle_dv_message(self, msg):
+    def handle_dv_message(self, msg: bytes) -> None:
         pass
 
     def send_dv_next(self):
+        '''Send DV to neighbors, and schedule this method to be called again in
+        1 second (DV_TABLE_SEND_INTERVAL).
         '''
-        Send DV to neighbors, and schedule this method to be called again in 1
-        second (DV_TABLE_SEND_INTERVAL).
-        '''
-        self.send_dv()
-        self.event_loop.schedule_event(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
 
-    def handle_down_link(self, neighbor):
+        self.send_dv()
+        loop = asyncio.get_event_loop()
+        loop.call_later(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
+
+    def handle_down_link(self, neighbor: str):
         self.log(f'Link down: {neighbor}')
 
     def resolve_neighbor_dvs(self):
-        '''
-        Return a copy of the mapping of neighbors to distance vectors, with IP
-        addresses replaced by names in every neighbor DV.
+        '''Return a copy of the mapping of neighbors to distance vectors, with
+        IP addresses replaced by names in every neighbor DV.
         '''
 
         neighbor_dvs = {}
@@ -95,9 +90,8 @@ class DVRouter(BaseFrameHandler):
             neighbor_dvs[neighbor] = self.resolve_dv(self.neighbor_dvs[neighbor])
         return neighbor_dvs
 
-    def resolve_dv(self, dv):
-        '''
-        Return a copy of distance vector dv with IP addresses replaced by
+    def resolve_dv(self, dv: dict) -> dict:
+        '''Return a copy of distance vector dv with IP addresses replaced by
         names.
         '''
 
@@ -111,8 +105,15 @@ class DVRouter(BaseFrameHandler):
             resolved_dv[dst] = distance
         return resolved_dv
 
-    def update_dv(self):
+    def update_dv(self) -> None:
         pass
 
-    def send_dv(self):
+    def bcast_for_int(self, intf: str) -> str:
+        ip_int = ip_str_to_int(self.int_to_info[intf].ipv4_addrs[0])
+        ip_prefix_int = ip_prefix(ip_int, socket.AF_INET, self.int_to_info[intf].ipv4_prefix_len)
+        ip_bcast_int = ip_prefix_last_address(ip_prefix_int, socket.AF_INET, self.int_to_info[intf].ipv4_prefix_len)
+        bcast = ip_int_to_str(ip_bcast_int, socket.AF_INET)
+        return bcast
+
+    def send_dv(self) -> None:
         print('Sending DV')

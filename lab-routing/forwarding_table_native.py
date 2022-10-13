@@ -5,35 +5,15 @@ from pyroute2 import IPRoute
 from pyroute2.netlink.rtnl import rtscopes
 from pyroute2.netlink.exceptions import NetlinkError
 
-class ForwardingTableNative(object):
+from cougarnet.sim.sys_cmd import sys_cmd_pid
+
+class ForwardingTableNative:
     def __init__(self):
         self._ip = IPRoute()
 
-    def add_entry(self, prefix, intf, next_hop):
-        '''
-        Add forwarding entry mapping prefix to interface and next hop IP
-        address.
-
-        prefix: str instance
-        '''
-
-        if '/' not in prefix:
-            if ':' in prefix:
-                prefix += '/128'
-            else:
-                prefix += '/32'
-        kwargs = { 'dst': prefix }
-        if next_hop is not None:
-            kwargs['gateway'] = next_hop
-        if intf is not None:
-            idx = self._ip.link_lookup(ifname=intf)[0]
-            kwargs['oif'] = idx
-
-        self._ip.route('add', **kwargs)
-
-    def remove_entry(self, prefix):
-        '''
-        Remove the forwarding entry matching prefix.
+    def add_entry(self, prefix: str, intf: str, next_hop: str) -> None:
+        '''Add forwarding entry mapping prefix to interface and next hop
+        IP address.
 
         prefix: str
         '''
@@ -43,11 +23,28 @@ class ForwardingTableNative(object):
                 prefix += '/128'
             else:
                 prefix += '/32'
-        self._ip.route('del', dst=prefix)
+        if next_hop is None:
+            next_hop = ''
+        if intf is None:
+            intf = ''
 
-    def flush(self, family=None, global_only=True):
+        sys_cmd_pid(['add_route', prefix, intf, next_hop])
+
+    def remove_entry(self, prefix: str) -> None:
+        '''Remove the forwarding entry matching prefix.
+
+        prefix: str
         '''
-        Flush the routing table.
+
+        if '/' not in prefix:
+            if ':' in prefix:
+                prefix += '/128'
+            else:
+                prefix += '/32'
+        sys_cmd_pid(['del_route', prefix])
+
+    def flush(self, family: int=None, global_only: bool=True) -> None:
+        '''Flush the routing table.
 
         prefix: str
         '''
@@ -59,17 +56,16 @@ class ForwardingTableNative(object):
             self.remove_entry(prefix)
 
 
-    def get_entry(self, ip_address):
-        '''
-        Return the subnet entry having the longest prefix match of ip_address.
-        The entry is a tuple consisting of interface and next-hop IP address.
-        If there is no match, return None, None.
+    def get_entry(self, address: str) -> tuple[str, str]:
+        '''Return the subnet entry having the longest prefix match of
+        address.  The entry is a tuple consisting of interface and
+        next-hop IP address.  If there is no match, return None, None.
 
-        ip_address: str
+        address: str, x.x.x.x or x:x::x
         '''
 
         try:
-            route = self._ip.route('get', dst=ip_address)[0]
+            route = self._ip.route('get', dst=address)[0]
         except (NetlinkError, IndexError):
             return None, None
 
@@ -86,7 +82,8 @@ class ForwardingTableNative(object):
             intf = None
         return intf, next_hop
 
-    def get_all_entries(self, family=None, resolve=False, global_only=True):
+    def get_all_entries(self, family: int=None, resolve: bool=False,
+            global_only: bool=True):
         routes = self._ip.get_routes()
         entries = {}
         for route in routes:

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import asyncio
 import socket
 import subprocess
 import traceback
@@ -7,8 +8,6 @@ import traceback
 from scapy.all import Ether, IP
 from scapy.data import IP_PROTOS 
 from scapy.layers.inet import ETH_P_IP
-
-from cougarnet.networksched import NetworkEventLoop
 
 from dvrouter import DVRouter
 
@@ -33,16 +32,18 @@ class SimHost(DVRouter):
         self.log(f'Dropping link {intf}')
         subprocess.run(cmd)
 
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         pass
 
 class SimHost1(SimHost):
-    def schedule_items(self, event_loop):
-        event_loop.schedule_event(4, self.send_icmp_echo, ('r5',))
+    def schedule_items(self):
+        loop = asyncio.get_event_loop()
+        loop.call_later(4, self.send_icmp_echo, 'r5')
 
 class SimHost2(SimHost):
-    def schedule_items(self, event_loop):
-        event_loop.schedule_event(5, self.send_icmp_echo, ('r4',))
+    def schedule_items(self):
+        loop = asyncio.get_event_loop()
+        loop.call_later(5, self.send_icmp_echo, 'r4')
 
 def main():
     hostname = socket.gethostname()
@@ -53,11 +54,15 @@ def main():
     else:
         cls = SimHost
 
-    router = cls()
-    event_loop = NetworkEventLoop(router._handle_frame)
-    router.init_dv(event_loop)
-    router.schedule_items(event_loop)
-    event_loop.run()
+    with cls() as router:
+        router.init_dv()
+        router.schedule_items()
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()
