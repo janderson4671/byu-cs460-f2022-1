@@ -13,7 +13,7 @@ the routes learned.
    - [Scenario Descriptions](#scenario-descriptions)
    - [Packets Issued](#packets-issued)
  - [Instructions](#instructions)
-   - [Copy `prefix.py`](#copy-prefix-py)
+   - [Copy `prefix.py`](#copy-prefixpy)
    - [Specification](#specification)
    - [Scaffold Code](#scaffold-code)
    - [Testing](#testing)
