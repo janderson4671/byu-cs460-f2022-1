@@ -13,6 +13,7 @@ the routes learned.
    - [Scenario Descriptions](#scenario-descriptions)
    - [Packets Issued](#packets-issued)
  - [Instructions](#instructions)
+   - [Copy `prefix.py`](#copy-prefix-py)
    - [Specification](#specification)
    - [Scaffold Code](#scaffold-code)
    - [Testing](#testing)
@@ -20,6 +21,7 @@ the routes learned.
    - [Useful Methods](#useful-methods)
    - [Other Helps](#other-helps)
  - [Submission](#submission)
+
 
 # Getting Started
 
@@ -292,6 +294,20 @@ Read Section 5.2.2 ("The Distance-Vector (DV) Routing Algorithm") in the book.
 Then implement a DV router in `dvrouter.py` with the following functionality.
 
 
+## Copy `prefix.py`
+
+Copy your fleshed out copy of `prefix.py` from the
+[previous lab](../lab-network-layer/README.md#part-2---forwarding-table):
+
+```bash
+$ cp ../lab-network-layer/prefix.py .
+```
+
+While note everything needs to be working, the IP manipulation functions do
+need to work properly, enough to allow the `ip_prefix_last_address()` function
+to work properly.
+
+
 ## Specification
 
  - A router starts out knowing only about the IP prefixes to which it is
@@ -357,7 +373,9 @@ Then implement a DV router in `dvrouter.py` with the following functionality.
    generate the broadcast (last) address for a given subnet (see
    [Part 2](../lab-network-layer/README.md#part-2---forwarding-table) and also
    the `handle_ip()` method in
-   [Part 3](../lab-network-layer/README.md#instructions-2).
+   [Part 3](../lab-network-layer/README.md#instructions-2).  The
+   `bcast_for_int()` method uses those functions to return the broadcast IP
+   address for the subnet associated with a given interface.
 
    Note that the subnet-specific broadcast address is used instead of a global
    broadcast (255.255.255.255) for (at least) two reasons:
