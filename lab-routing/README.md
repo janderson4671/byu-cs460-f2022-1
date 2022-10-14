@@ -20,6 +20,7 @@ the routes learned.
  - [Helps](#helps)
    - [Useful Methods](#useful-methods)
    - [Other Helps](#other-helps)
+ - [Automated Testing](#automated-testing)
  - [Submission](#submission)
 
 
@@ -591,6 +592,20 @@ $ cougarnet --disable-ipv6 --terminal=none scenario3.cfg
  - Save your work often.  You are welcome (and encouraged) to use a version
    control repository, such as GitHub.  However, please ensure that it is a
    private repository!
+
+
+# Automated Testing
+
+(Driver is work-in-progress and will be included soon.)
+
+For your convenience, a [script](driver.py) is also provided for automated
+testing.  This is not a replacement for manual testing but can be used as a
+sanity check.  You can use it by simply running the following in the working
+directory:
+
+```
+./driver.py
+```
 
 
 # Submission
