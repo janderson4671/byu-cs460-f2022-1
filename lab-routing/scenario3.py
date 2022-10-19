@@ -13,6 +13,8 @@ from cougarnet.sim.sys_cmd import sys_cmd_pid
 
 from dvrouter import DVRouter
 
+START_TIME = 8
+
 class SimHost(DVRouter):
     def _handle_frame(self, frame, intf):
         try:
@@ -39,32 +41,40 @@ class SimHost(DVRouter):
 class SimHost2(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(10, self.drop_link, 'r2-r8')
+        loop.call_later(START_TIME, self.log, 'START')
+        loop.call_later(START_TIME + 8, self.drop_link, 'r2-r8')
+        loop.call_later(START_TIME + 18, self.log, 'STOP')
 
 class SimHost8(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(10, self.drop_link, 'r8-r2')
+        loop.call_later(START_TIME + 8, self.drop_link, 'r8-r2')
 
 class SimHost9(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(4, self.send_icmp_echo, 'r10')
-        loop.call_later(5, self.send_icmp_echo, 'r11')
-        loop.call_later(6, self.send_icmp_echo, 'r12')
-        loop.call_later(7, self.send_icmp_echo, 'r13')
-        loop.call_later(8, self.send_icmp_echo, 'r14')
+        loop.call_later(START_TIME + 1, self.send_icmp_echo, 'r10')
+        loop.call_later(START_TIME + 2, self.send_icmp_echo, 'r11')
+        loop.call_later(START_TIME + 3, self.send_icmp_echo, 'r12')
+        loop.call_later(START_TIME + 4, self.send_icmp_echo, 'r13')
+
+class SimHost6(SimHost):
+    def schedule_items(self):
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME + 5, self.send_icmp_echo, 'r14')
 
 class SimHost7(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(9, self.send_icmp_echo, 'r15')
-        loop.call_later(18, self.send_icmp_echo, 'r15')
+        loop.call_later(START_TIME + 6, self.send_icmp_echo, 'r15')
+        loop.call_later(START_TIME + 17, self.send_icmp_echo, 'r15')
 
 def main():
     hostname = socket.gethostname()
     if hostname == 'r2':
         cls = SimHost2
+    elif hostname == 'r6':
+        cls = SimHost6
     elif hostname == 'r7':
         cls = SimHost7
     elif hostname == 'r8':
