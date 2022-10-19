@@ -17,6 +17,8 @@ the routes learned.
    - [Specification](#specification)
    - [Scaffold Code](#scaffold-code)
    - [Testing](#testing)
+ - [Automated Testing](#automated-testing)
+ - [Evaluation](#evaluation)
  - [Helps](#helps)
    - [Useful Methods](#useful-methods)
    - [Other Helps](#other-helps)
@@ -283,7 +285,7 @@ distance vectors and forwarding table entries have been updated properly.
  - 5 seconds: ICMP packet sent from `r9` to `r11` and back again
  - 6 seconds: ICMP packet sent from `r9` to `r12` and back again
  - 7 seconds: ICMP packet sent from `r9` to `r13` and back again
- - 8 seconds: ICMP packet sent from `r9` to `r14` and back again
+ - 8 seconds: ICMP packet sent from `r6` to `r14` and back again
  - 9 seconds: ICMP packet sent from `r7` to `r15` and back again
  - 10 seconds: Link dropped between `r2` and `r8`
  - 18 seconds: ICMP packet sent from `r7` to `r15` and back again
@@ -548,6 +550,28 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 $ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 $ cougarnet --disable-ipv6 --terminal=none scenario3.cfg
 ```
+
+
+# Automated Testing
+
+For your convenience, a [script](driver.py) is also provided for automated
+testing.  This is not a replacement for manual testing but can be used as a
+sanity check.  You can use it by simply running the following in the working
+directory:
+
+```
+./driver.py
+```
+
+
+# Evaluation
+
+Your score will be computed out of a maximum of 100 points based on the
+following distribution:
+
+ - Part 1: 40 points
+ - Part 2: 30 points
+ - Part 3: 30 points
 
 
 # Helps
