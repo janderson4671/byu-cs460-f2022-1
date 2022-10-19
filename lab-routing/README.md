@@ -569,9 +569,9 @@ directory:
 Your score will be computed out of a maximum of 100 points based on the
 following distribution:
 
- - Part 1: 40 points
- - Part 2: 30 points
- - Part 3: 30 points
+ - Scenario 1: 40 points
+ - Scenario 2: 30 points
+ - Scenario 3: 30 points
 
 
 # Helps
