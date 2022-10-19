@@ -38,7 +38,9 @@ class SimHost(DVRouter):
 class SimHost1(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
+        loop.call_later(3, self.log, 'START')
         loop.call_later(4, self.send_icmp_echo, 'r5')
+        loop.call_later(7, self.log, 'STOP')
 
 class SimHost2(SimHost):
     def schedule_items(self):
