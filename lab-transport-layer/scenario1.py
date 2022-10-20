@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import asyncio
 import binascii
 import random
 import socket
@@ -10,8 +11,6 @@ import traceback
 from scapy.all import Ether, ICMP, IP, UDP, Raw, UDP
 from scapy.data import IP_PROTOS
 from scapy.layers.inet import ETH_P_IP
-
-from cougarnet.networksched import NetworkEventLoop
 
 from echoserver import EchoServerUDP
 from nc import NetcatUDP
@@ -28,7 +27,7 @@ class SimHost(TransportHost):
             eth = Ether(frame)
             if eth.type == ETH_P_IP:
                 ip = eth.getlayer(IP)
-                if ip.dst == self.int_to_info[intf].ipv4addrs[0]:
+                if ip.dst == self.int_to_info[intf].ipv4_addrs[0]:
                     if ip.proto == IP_PROTOS.udp:
                         udp = ip.getlayer(UDP)
                         payload = bytes(udp.getlayer(Raw))
@@ -54,11 +53,11 @@ class SimHost(TransportHost):
             traceback.print_exc()
         super(SimHost, self)._handle_frame(frame, intf)
 
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         pass
 
 class SimHostA(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         a_args = ('abcdefghijklmnop', '10.0.0.2', B_PORT)
 
         class SimNetcatUDP(NetcatUDP):
@@ -77,11 +76,14 @@ class SimHostA(SimHost):
         client = SimNetcatUDP('10.0.0.1', A_PORT, self.send_packet)
         self.install_socket_udp('10.0.0.1', A_PORT, client.sock)
 
-        event_loop.schedule_event(5, client.sendto, a_args)
-        event_loop.schedule_event(7, client.sendto, a_args)
+        loop = asyncio.get_event_loop()
+        loop.call_later(4, self.log, 'START')
+        loop.call_later(5, client.sendto, *a_args)
+        loop.call_later(7, client.sendto, *a_args)
+        loop.call_later(9, self.log, 'STOP')
 
 class SimHostB(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
 
         class SimEchoServerUDP(EchoServerUDP):
             def handle_data(_self):
@@ -98,10 +100,11 @@ class SimHostB(SimHost):
             server = SimEchoServerUDP('10.0.0.2', B_PORT, self.send_packet)
             self.install_socket_udp('10.0.0.2', B_PORT, server.sock)
 
-        event_loop.schedule_event(6, setup_server)
+        loop = asyncio.get_event_loop()
+        loop.call_later(6, setup_server)
 
 class SimHostC(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         a_args = ('abcdefghijklmnop', '10.0.0.2', B_PORT)
 
         class SimNetcatUDP(NetcatUDP):
@@ -120,7 +123,8 @@ class SimHostC(SimHost):
         client = SimNetcatUDP('10.0.0.3', C_PORT, self.send_packet)
         self.install_socket_udp('10.0.0.3', C_PORT, client.sock)
 
-        event_loop.schedule_event(8, client.sendto, a_args)
+        loop = asyncio.get_event_loop()
+        loop.call_later(8, client.sendto, *a_args)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -139,10 +143,13 @@ def main():
     else:
         cls = SimHost
 
-    host = cls(args.router)
-    event_loop = NetworkEventLoop(host._handle_frame)
-    host.schedule_items(event_loop)
-    event_loop.run()
+    with cls(args.router) as host:
+        host.schedule_items()
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import asyncio
 import random
 import socket
 import sys
@@ -9,8 +10,6 @@ import traceback
 from scapy.all import Ether, ICMP, IP, Raw, TCP
 from scapy.data import IP_PROTOS
 from scapy.layers.inet import ETH_P_IP
-
-from cougarnet.networksched import NetworkEventLoop
 
 from mysocket import TCPListenerSocket, TCPSocket, TCP_STATE_ESTABLISHED, TCP_FLAGS_ACK
 from transporthost import TransportHost
@@ -24,7 +23,7 @@ class SimHost(TransportHost):
             eth = Ether(frame)
             if eth.type == ETH_P_IP:
                 ip = eth.getlayer(IP)
-                if ip.dst == self.int_to_info[intf].ipv4addrs[0]:
+                if ip.dst == self.int_to_info[intf].ipv4_addrs[0]:
                     if ip.proto == IP_PROTOS.tcp:
                         tcp = ip.getlayer(TCP)
                         flags = tcp.sprintf('%TCP.flags%')
@@ -36,20 +35,20 @@ class SimHost(TransportHost):
 
     def connect_and_install(self, local_addr, local_port,
             remote_addr, remote_port,
-            send_ip_packet_func, notify_on_data_func, event_loop1):
+            send_ip_packet_func, notify_on_data_func):
 
         sock = TCPSocket.connect(local_addr, local_port,
                 remote_addr, remote_port,
-                send_ip_packet_func, notify_on_data_func, event_loop1)
+                send_ip_packet_func, notify_on_data_func)
         self.install_socket_tcp(local_addr, local_port, remote_addr, remote_port, sock)
 
     def send_packet_as_if_connected(self, local_addr, local_port,
             remote_addr, remote_port,
-            send_ip_packet_func, notify_on_data_func, event_loop1):
+            send_ip_packet_func, notify_on_data_func):
 
         sock = TCPSocket(local_addr, local_port,
                 remote_addr, remote_port, TCP_STATE_ESTABLISHED,
-                send_ip_packet_func, notify_on_data_func, event_loop1)
+                send_ip_packet_func, notify_on_data_func)
         self.install_socket_tcp(local_addr, local_port, remote_addr, remote_port, sock)
         sock.send_packet(random.randint(0, 0xffffffff),
                 random.randint(0, 0xffffffff), TCP_FLAGS_ACK, b'')
@@ -59,35 +58,40 @@ class SimHost(TransportHost):
 
 
 class SimHostA(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         args1 = ('10.0.0.1', random.randint(1024, 65536), '10.0.0.2', B_PORT,
-                self.send_packet, self.do_nothing, event_loop)
+                self.send_packet, self.do_nothing)
         args2 = ('10.0.0.1', random.randint(1024, 65536), '10.0.0.2', B_PORT,
-                self.send_packet, self.do_nothing, event_loop)
+                self.send_packet, self.do_nothing)
         args3 = ('10.0.0.1', random.randint(1024, 65536), '10.0.0.2', B_PORT,
-                self.send_packet, self.do_nothing, event_loop)
+                self.send_packet, self.do_nothing)
 
-        event_loop.schedule_event(5, self.connect_and_install, args1)
-        event_loop.schedule_event(7, self.connect_and_install, args2)
-        event_loop.schedule_event(8, self.send_packet_as_if_connected, args3)
+        loop = asyncio.get_event_loop()
+        loop.call_later(4, self.log, 'START')
+        loop.call_later(5, self.connect_and_install, *args1)
+        loop.call_later(7, self.connect_and_install, *args2)
+        loop.call_later(8, self.send_packet_as_if_connected, *args3)
+        loop.call_later(10, self.log, 'STOP')
 
 class SimHostB(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
 
         def setup_server():
             sock = TCPListenerSocket('10.0.0.2', B_PORT,
                     self.install_socket_tcp,
-                    self.send_packet, self.do_nothing, event_loop)
+                    self.send_packet, self.do_nothing)
             self.install_listener_tcp('10.0.0.2', B_PORT, sock)
 
-        event_loop.schedule_event(6, setup_server)
+        loop = asyncio.get_event_loop()
+        loop.call_later(6, setup_server)
 
 class SimHostC(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         args = ('10.0.0.3', random.randint(1024, 65535), '10.0.0.2', B_PORT,
-                self.send_packet, self.do_nothing, event_loop)
+                self.send_packet, self.do_nothing)
 
-        event_loop.schedule_event(9, self.connect_and_install, args)
+        loop = asyncio.get_event_loop()
+        loop.call_later(9, self.connect_and_install, *args)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -106,10 +110,13 @@ def main():
     else:
         cls = SimHost
 
-    host = cls(args.router)
-    event_loop = NetworkEventLoop(host._handle_frame)
-    host.schedule_items(event_loop)
-    event_loop.run()
+    with cls(args.router) as host:
+        host.schedule_items()
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()
