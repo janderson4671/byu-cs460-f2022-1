@@ -65,7 +65,7 @@ The files given to you for this lab are the following:
    socket.  You will also do your work here!
  - `echoserver.py` and `nc.py` - files containing classes for applications that
    use your UDP socket implementation, specifically, an echo server and a very
-   simply Netcat, respectively.
+   simple Netcat, respectively.
  - `scenario1.cfg` and `scenario2.cfg` -
    [network configuration files](https://github.com/cdeccio/cougarnet/blob/main/README.md#network-configuration-file)
    for testing your implementations.  Both contain the same network topology,
@@ -416,7 +416,7 @@ At this point, you should be able to run the following command to run
 scenario 1:
 
 ```bash
-$ cougarnet --disable-ipv6 --display --wireshark s1 scenario1.cfg
+$ cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario1.cfg
 ```
 
 You have 5 seconds to select the `s1-b` interface before the UDP packet is sent
@@ -643,7 +643,7 @@ At this point, you should be able to run the following command to run scenario
 2:
 
 ```bash
-$ cougarnet --disable-ipv6 --display --wireshark s1 scenario2.cfg
+$ cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario2.cfg
 ```
 
 You have 5 seconds to select the `s1-b` interface before the initial TCP SYN
