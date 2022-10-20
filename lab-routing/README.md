@@ -52,6 +52,14 @@ $ sudo apt install python3-pyroute2
 ```
 
 
+## Modify Virtual Maching Resources
+
+This lab requires your VM to start 15 virtual hosts (scenario 3).  For some
+host systems, this can be quite intense.  To help address this, it might be
+beneficial to shut down your VM and use VirtualBox or UTM to increase the
+number of cores associated with your VM.
+
+
 ## Resources Provided
 
 The files given to you for this lab are the following:
@@ -452,8 +460,11 @@ to work properly.
    - When a router's own newly-created DV (which creation is prompted by a DV
      message from a neighbor) is _different_ from its previous
      version, then a new DV message is distributed immediately.
+
    - A DV message is distributed to neighbors every one second, as a
      keep-alive, to let neighbors know that the link is still up.
+
+   *IMPORTANT*: Only distribute your DV in one of these two circumstances!!
 
  - A router updates its forwarding table whenever its own DV has changed after
    its re-creation.  For every prefix in its DV, the next hop is the IP address
@@ -473,6 +484,10 @@ to work properly.
    - Call the `get_all_entries()` method on the forwarding table instance to
      get its current state, and then add/remove using the `add_entry()` and
      `remove_entry()` methods, respectively, to update the table.
+
+   If the prefix is one that is local to this host (i.e., distance is 0), your
+   code does not need to create forwarding entry--because the host *is* the
+   final destination (i.e., it doesn't need to be forwarded)!
 
  - A router keeps track of the last time that it received a DV message from
    every neighbor.  After three seconds have passed since receiving a DV
@@ -523,12 +538,18 @@ implement the above specification.
 Test your implementation against scenario 1:
 
 ```
-$ cougarnet --disable-ipv6 scenario1.cfg
+$ cougarnet --disable-ipv6 --stop=30 scenario1.cfg
 ```
 
 Determine the appropriate output--that is, which hosts should see the scheduled
 ICMP packets on their way and back--and make sure that the cougarnet output
 matches appropriately.
+
+The `--stop=30` option is used to make sure that the Cougarnet instance running
+your scenario terminates if 30 seconds have passed.  You can adjust this number
+however you'd like.  However, I do recommend using the `--stop` option for this
+lab. If your router code gets into a loop that is otherwise difficult to
+interrupt, the `--stop` argument will help get it under control.
 
 When it is working properly, test also with the `--terminal=none` option:
 
@@ -539,8 +560,8 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 Then proceed to test scenarios 2 and 3.
 
 ```
-$ cougarnet --disable-ipv6 scenario2.cfg
-$ cougarnet --disable-ipv6 scenario3.cfg
+$ cougarnet --disable-ipv6 --stop=30 scenario2.cfg
+$ cougarnet --disable-ipv6 --stop=30 scenario3.cfg
 ```
 
 When all are working properly, test also with the `--terminal=none` option:
