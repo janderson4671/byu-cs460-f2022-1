@@ -218,7 +218,7 @@ class Scenario2(Lab3Tester):
             ]
 
 class Scenario3(Lab3Tester):
-    cmd = ['cougarnet', '--stop=30', '--disable-ipv6',
+    cmd = ['cougarnet', '--stop=36', '--disable-ipv6',
             '--terminal=none', 'scenario3.cfg']
 
     expected_observations = [
@@ -287,7 +287,6 @@ class Scenario3(Lab3Tester):
                 ('ICMP', ['r15']),
                 ('ICMP', ['r14']),
                 ('ICMP', ['r2']),
-                ('ICMP', ['r8']),
                 ('ICMP', ['r1']),
                 ('ICMP', ['r6']),
                 ('ICMP', ['r7'])],
