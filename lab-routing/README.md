@@ -8,6 +8,7 @@ the routes learned.
  - [Getting Started](#getting-started)
    - [Update Cougarnet](#update-cougarnet)
    - [Install Dependencies](#install-dependencies)
+   - [Modify Virtual Machine Resources](#modify-virtual-machine-resources)
    - [Resources Provided](#resources-provided)
    - [Starter Commands](#starter-commands)
    - [Scenario Descriptions](#scenario-descriptions)
@@ -52,7 +53,7 @@ $ sudo apt install python3-pyroute2
 ```
 
 
-## Modify Virtual Maching Resources
+## Modify Virtual Machine Resources
 
 This lab requires your VM to start 15 virtual hosts (scenario 3).  For some
 host systems, this can be quite intense.  To help address this, it might be
