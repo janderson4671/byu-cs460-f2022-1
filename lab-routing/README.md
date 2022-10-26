@@ -477,6 +477,9 @@ to work properly.
    entries, which are created by default, as described
    [previously](#starter-commands)).
 
+   *IMPORTANT*: Only update your forwarding table when your DV has *changed*
+   after an update!!
+
    There are two primary ways to update the forwarding table:
 
    - Call the `flush()` method on the forwarding table instance to clear out
@@ -488,7 +491,7 @@ to work properly.
    If the prefix is one that is local to this host (i.e., distance is 0), your
    code does not need to create forwarding entry--because the host *is* the
    final destination (i.e., it doesn't need to be forwarded)!
-
+   
  - A router keeps track of the last time that it received a DV message from
    every neighbor.  After three seconds have passed since receiving a DV
    message from a neighbor, the router discards that neighbor's DV, such that
