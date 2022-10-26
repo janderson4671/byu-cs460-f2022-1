@@ -560,8 +560,8 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 Then proceed to test scenarios 2 and 3.
 
 ```
-$ cougarnet --disable-ipv6 --stop=30 scenario2.cfg
-$ cougarnet --disable-ipv6 --stop=30 scenario3.cfg
+$ cougarnet --disable-ipv6 --stop=15 scenario2.cfg
+$ cougarnet --disable-ipv6 --stop=36 scenario3.cfg
 ```
 
 When all are working properly, test also with the `--terminal=none` option:
