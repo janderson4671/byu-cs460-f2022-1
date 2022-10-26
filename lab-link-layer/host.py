@@ -49,7 +49,6 @@ class HostA(Host):
         loop.call_later(9, self.send_icmp_echo, *a_to_e)
         loop.call_later(11, self.send_icmp_echo, *a_to_e)
         loop.call_later(15, self.send_icmp_echo, *a_to_c)
-        loop.call_later(16, self.log, 'STOP')
 
 class HostC(Host):
     def schedule_items(self):
@@ -81,14 +80,14 @@ def main():
     else:
         cls = Host
 
-    with cls() as host:
-        host.schedule_items()
+    host = cls()
+    host.schedule_items()
 
-        loop = asyncio.get_event_loop()
-        try:
-            loop.run_forever()
-        finally:
-            loop.close()
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_forever()
+    finally:
+        loop.close()
 
 if __name__ == '__main__':
     main()

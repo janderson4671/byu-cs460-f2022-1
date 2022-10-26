@@ -16,13 +16,7 @@ implementing a link-layer switch!
  - [Instructions](#instructions)
    - [Part 1 - Link-Layer Forwarding and Learning](#part-1---link-layer-forwarding-and-learning)
    - [Part 2 - VLANs and Trunking](#part-2---vlans-and-trunking)
- - [Automated Testing](#automated-testing)
- - [Evaluation](#evaluation)
- - [Helps](#helps)
-   - [Ethernet Frames](#ethernet-frames)
-   - [Working with `bytes` Instances](#working-with-bytes-instances)
-   - [Sending and Receiving Frames](#sending-and-receiving-frames)
-   - [Other Helps](#other-helps)
+   - [Helps](#helps)
  - [Submission](#submission)
 
 
@@ -278,7 +272,7 @@ Then implement a basic switch in `switch.py` with the following functionality:
  - The aging time of a new table entry is 8 seconds.  When a frame arrives
    corresponding to an existing entry, its aging time is reset to 8 seconds.
  - Table entries are purged as their aging time expires.
- - A non-broadcast frame is forwarded as-is (unchanged) to the interface
+ - A non-broadcast frames is forwarded as-is (unchanged) to the interface
    corresponding to the table entry of the destination MAC address, if such an
    entry exists; if no entry exists, then it is forwarded to every interface,
    except that from which it originated.
@@ -289,10 +283,6 @@ Test your implementation against scenarios 1 and 2.  Determine the appropriate
 output--that is, which hosts should receive which frames--and make sure that
 the output for your switch implementation matches appropriately.
 
-See the [Help](#helps) section for an
-[Ethernet frame reference](#ethernet-frames), as well as implementation tips
-and examples.
-
 When it is working properly, test also with the `--terminal=none` option:
 
 ```
@@ -300,19 +290,20 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 $ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 ```
 
-You can also use the driver provided for
-[automated testing](#automated-testing).
-
-Now would be a good time to
-[save your work](../contrib/github-repo-mirror/README.md#commit-and-push-local-changes-to-private-repo).
-
 
 ## Part 2 - VLANs and Trunking
 
 Read Section 6.4.4 ("Virtual Local Area Networks (VLANs)") in the book.
 
-Now add implementation for VLANs and trunking according to the following:
+Then add implementation for VLANs and trunking according to the following:
 
+ - When the switch is initialized, associate each interface port with a VLAN,
+   with a trunk, or with neither.  This is done by looking for the presence of
+   environment variables in your script, as described in the
+   [documentation](https://github.com/cdeccio/cougarnet#vlan-attributes).
+   Note that for a given switch configuration either 1) all interfaces are
+   either VLANs or trunks, or 2) no interfaces are VLANs or trunks,
+   [as documented](https://github.com/cdeccio/cougarnet/blob/main/README.md#configuration-1).
  - A frame should only ever be forwarded to interfaces that share the same VLAN
    as the interface from which it originated, or to a trunk interface.  This is
    true whether a table entry exists for a given MAC address, no entry exists,
@@ -325,30 +316,13 @@ Now add implementation for VLANs and trunking according to the following:
    and used to determine the interface(s) (if any) to which the frame should be
    forwarded.
 
-Note that when a switch is initialized, it is populated with information about
-each interface, including the VLAN it is associated with.  You can access all
-of this information with the `int_to_info` instance variable on your Switch
-instance (inherited from the `BaseHost` class).  Also, you can use the
-`_is_trunk_link()` method to (gasp!) see if an interface corresponds to a
-trunk link.
+Test your implementation against scenarios 1, 2, and 3.  Determine the
+appropriate output--that is, which hosts should receive which frames--and make
+sure that the output for your switch implementation matches appropriately.
+Note that scenarios 1 and 2 do not include VLANs, but your switch should still
+work for those scenarios.
 
-See the [Help](#helps) section for more, including an
-[802.1Q frame reference](#ethernet-frames), and implementation tips and
-examples.
-
-Test your implementation against scenario 3.  Determine the appropriate
-output--that is, which hosts should receive which frames--and make sure that
-the output for your switch implementation matches appropriately.
-
-Even though it wasn't obvious, the switches in scenario1.cfg and scenario2.cfg
-were configured with VLANs.  It just so happens that when VLANs are not
-_explicitly_ configured for a switch (i.e., in the configuration file), _every_
-interface on that switch is _implicitly_ assigned to VLAN 0. What this means
-for you is that the code you write to handle scenario 3 should still handle
-scenarios 1 and 2, without having to make any special provisions.
-
-When your switch implementation is working properly, test all three scenarios
-with the `--terminal=none` option:
+When it is working properly, test also with the `--terminal=none` option:
 
 ```
 $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
@@ -356,38 +330,13 @@ $ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 $ cougarnet --disable-ipv6 --terminal=none scenario3.cfg
 ```
 
-You can also use the driver provided for
-[automated testing](#automated-testing).
+
+## Helps
 
 
-# Automated Testing
+### Ethernet Frames
 
-For your convenience, a [script](driver.py) is also provided for automated
-testing.  This is not a replacement for manual testing but can be used as a
-sanity check.  You can use it by simply running the following in the working
-directory:
-
-```
-./driver.py
-```
-
-# Evaluation
-
-Your score will be computed out of a maximum of 100 points based on the
-following distribution:
-
- - Part 1: 60 points
-   - 30 points for scenario 1
-   - 30 points for scenario 2
- - Part 2: 40 points
-
-
-# Helps
-
-
-## Ethernet Frames
-
-Your code will need to parse Ethernet frames from the "wire" as `bytes`
+Your code will need to parse Ethernet frames from the "wire" as a `bytes`
 instances.  The frame that you will be receiving looks like this:
 
 | Destination MAC Addr | Source MAC Addr | EtherType | Payload |
@@ -415,7 +364,7 @@ Note that there are libraries, including scapy, for parsing Ethernet frames and
 higher-level packets, but you may not use them for the lab.
 
 
-## Working with `bytes` Instances
+### Working with Bytes Instances
 
 A `bytes` object in Python is a sequence of arbitrary byte values.  For
 example:
@@ -425,7 +374,7 @@ example:
 >>> bytes2 = b'\x05\x06\x07\x08\x09'
 ```
 
-The `b` prefix is always used with `bytes` objects to distinguish them from
+The `b'` prefix is always used with `bytes` objects to distinguish them from
 `str` (string) objects, which have no such prefix.  In the above example,
 `bytes1` and `bytes2` are assigned values from `bytes` literals.  The `\x`
 notation indicates that the next two characters are hexadecimal values
@@ -551,18 +500,13 @@ For more info see the following:
  - [`struct` documentation](https://docs.python.org/3/library/struct.html)
 
 
-## Sending and Receiving Frames
+### Sending and Receiving Frames
 
-The `Switch` class inherits from `cougarnet.sim.BaseHost`, which contains
-several useful features.  The `send_frame()` method is used to send a frame
-(type `bytes`) out a specific interface (type `str`).  The
-`physical_interfaces` attribute contains the list of "physical" interfaces of
-the switch.  The `int_to_info` attribute is a mapping of each interface to its
-information.  More information can be found in the
+Sending and receiving frames is described in the
 [documentation](https://github.com/cdeccio/cougarnet/blob/main/README.md#sending-and-receiving-frames).
 
 
-## Other Helps
+### Other Helps
 
  - Use wireshark to capture and display frames on interfaces that you are
    interested in.  See the 
@@ -580,11 +524,9 @@ information.  More information can be found in the
    submission will be graded using only your `switch.py`; the `host.py` and
    scenario files used will be the stock files [you were provided](#resources-provided).
  - Save your work often, especially after you finish Part 1 and move on to
-   Part 2.  You are encouraged to
-   [commit your changes](../contrib/github-repo-mirror/README.md#commit-and-push-local-changes-to-private-repo).
-   to the private GitHub repository that you created
-   [in an earlier assignment](../contrib/github-repo-mirror/README.md).
-   Please ensure that it remains private!
+   Part 2.  You are encouraged to commit your changes to the private GitHub
+   repository that you created in an earlier assignment.  Please ensure that it
+   remains private!
 
 
 # Submission

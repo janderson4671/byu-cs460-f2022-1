@@ -16,57 +16,29 @@ LOG_FRAME_RECV_RE = re.compile(LOG_PREFIX + \
 NEXT_ITERATION_SLACK = 0.15 # 150 ms
 MAX_INTERVAL = 0.5 # 500 ms
 
-class Lab1Tester:
+class LinkLayerLabTester:
     cmd = []
-    expected_observations = []
+    observing_hosts = []
 
-    def evaluate(self, iteration, time_seen, observations):
-        if iteration >= len(self.expected_observations):
+    def evaluate(self, iteration, time_seen, observing_hosts):
+        if iteration >= len(self.observing_hosts):
             # not evaluated
             return None
 
-        solution = self.expected_observations[iteration]
+        solution = self.observing_hosts[iteration]
         if solution is None:
             # not evaluated
             return None
 
-        i = 0
-        for expected_cat, expected_hostnames in solution:
-            observed_hostnames = []
-            num_hostnames = len(expected_hostnames)
-            j = i
-            for j in range(i, i + num_hostnames):
-                if j >= len(observations):
-                    break
-                observed_cat, observed_hostname = observations[j]
-                if observed_cat != expected_cat:
-                    sys.stderr.write(('ERROR: Time %0.3f: ' + \
-                            'Expected %d %s at %s, but observed %s at %s\n') % \
-                            (time_seen, num_hostnames, expected_cat,
-                                ', '.join(expected_hostnames),
-                                observed_cat, observed_hostname))
-                    return False
-                observed_hostnames.append(observed_hostname)
-            j += 1
-            i = j
-
-            expected_hostnames = sorted(expected_hostnames)
-            observed_hostnames = sorted(observed_hostnames)
-            if expected_hostnames != observed_hostnames:
-                sys.stderr.write(('ERROR: Time %0.3f: ' + \
-                        'Expected %s at %s, but observed %s at %s\n') % \
-                        (time_seen, expected_cat,
-                            ', '.join(expected_hostnames),
-                            expected_cat, ', '.join(observed_hostnames)))
-                return False
-
-        if len(observations) > j:
-            sys.stderr.write(('ERROR: Time %0.3f: ' + \
-                    'Unexpected %s at %s\n') % \
-                    (time_seen, observations[j][0], observations[j][1]))
+        solution = sorted(solution)
+        submission = sorted(observing_hosts)
+        if solution != submission:
+            sys.stderr.write(('At time %0.3f, frame seen by: %s\n  ' + \
+                    '(should be %s)\n') % \
+                    (time_seen, ', '.join(submission), ', '.join(solution)))
             return False
-
         return True
+
 
     def evaluate_lines(self, lines):
         # initialize
@@ -74,7 +46,7 @@ class Lab1Tester:
         max_time = None
         next_time = None
         iteration = None
-        observations = None
+        hosts_seen = None
 
         evaluated = 0
         success = 0
@@ -86,32 +58,28 @@ class Lab1Tester:
                 max_time = start_time + MAX_INTERVAL
                 next_time = start_time + (1 - NEXT_ITERATION_SLACK)
                 iteration = 0
-                observations = []
-                continue
+                hosts_seen = []
 
-            cat = ''
             m = LOG_FRAME_RECV_RE.search(line)
             if m is not None:
                 hostname = m.group('hostname')
-                cat = 'FRAME'
             else:
                 m = LOG_STOP_RE.search(line)
                 if m is not None:
                     hostname = ''
-                    cat = ''
 
             if m is not None:
                 mytime = float(m.group('time'))
 
                 while mytime > max_time:
-                    if not observations:
+                    if not hosts_seen:
                         # if we have gone through the loop more than once, then
                         # don't reduce by NEXT_ITERATION_SLACK
                         start_time = start_time + NEXT_ITERATION_SLACK
                         next_time = next_time + NEXT_ITERATION_SLACK
 
                     # evaluate
-                    result = self.evaluate(iteration, start_time, observations)
+                    result = self.evaluate(iteration, start_time, hosts_seen)
                     if result is not None:
                         evaluated += 1
                         if result:
@@ -123,18 +91,17 @@ class Lab1Tester:
 
                     max_time = start_time + MAX_INTERVAL
                     next_time = start_time + (1.0 - NEXT_ITERATION_SLACK)
-                    observations = []
+                    hosts_seen = []
 
-                if not observations:
+                if not hosts_seen:
                     # if this is the first host seen, then save the time
                     start_time = mytime
                     max_time = start_time + MAX_INTERVAL
                     next_time = start_time + (1.0 - NEXT_ITERATION_SLACK)
-
-                observations.append((cat, hostname))
+                hosts_seen.append(hostname)
 
         # evaluate
-        result = self.evaluate(iteration, start_time, observations)
+        result = self.evaluate(iteration, start_time, hosts_seen)
         if result is not None:
             evaluated += 1
             if result:
@@ -156,58 +123,58 @@ class Lab1Tester:
         output_lines = output.splitlines()
         return self.evaluate_lines(output_lines)
 
-class Scenario1(Lab1Tester):
+class Scenario1(LinkLayerLabTester):
     cmd = ['cougarnet', '--stop=22', '--disable-ipv6',
             '--terminal=none', 'scenario1.cfg']
-    expected_observations = [
-            [('FRAME', ['b', 'c', 'd', 'e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['c'])],
-            [('FRAME', ['b', 'c', 'd', 'e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['c'])],
+    observing_hosts = [
+            ['b', 'c', 'd', 'e'],
+            ['a'],
+            ['c'],
+            ['b', 'c', 'd', 'e'],
+            ['a'],
+            ['e'],
+            ['a'],
+            ['c'],
             None,
             None,
-            [('FRAME', ['a'])],
-            [('FRAME', ['b', 'c', 'd', 'e'])],
+            ['a'],
+            ['b', 'c', 'd', 'e'],
             ]
 
-class Scenario2(Lab1Tester):
+class Scenario2(LinkLayerLabTester):
     cmd = ['cougarnet', '--stop=22', '--disable-ipv6',
             '--terminal=none', 'scenario2.cfg']
-    expected_observations = [
-            [('FRAME', ['b', 'c', 'd', 'e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['c'])],
-            [('FRAME', ['b', 'c', 'd', 'e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['c'])],
+    observing_hosts = [
+            ['b', 'c', 'd', 'e'],
+            ['a'],
+            ['c'],
+            ['b', 'c', 'd', 'e'],
+            ['a'],
+            ['e'],
+            ['a'],
+            ['c'],
             None,
             None,
-            [('FRAME', ['a'])],
-            [('FRAME', ['b', 'c', 'd', 'e'])],
+            ['a'],
+            ['b', 'c', 'd', 'e'],
             ]
 
-class Scenario3(Lab1Tester):
+class Scenario3(LinkLayerLabTester):
     cmd = ['cougarnet', '--stop=22', '--disable-ipv6',
             '--terminal=none', 'scenario3.cfg']
-    expected_observations = [
-            [('FRAME', ['c', 'e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['c'])],
-            [('FRAME', ['c', 'e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['e'])],
-            [('FRAME', ['a'])],
-            [('FRAME', ['c'])],
+    observing_hosts = [
+            ['c', 'e'],
+            ['a'],
+            ['c'],
+            ['c', 'e'],
+            ['a'],
+            ['e'],
+            ['a'],
+            ['c'],
             None,
             None,
-            [('FRAME', ['a'])],
-            [('FRAME', ['c', 'e'])],
+            ['a'],
+            ['c', 'e'],
             ]
 
 def main():
@@ -222,3 +189,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
