@@ -5,7 +5,7 @@ import socket
 import subprocess
 import traceback
 
-from scapy.all import Ether, IP
+from scapy.all import Ether, IP, ICMP
 from scapy.data import IP_PROTOS 
 from scapy.layers.inet import ETH_P_IP
 
@@ -22,7 +22,9 @@ class SimHost(DVRouter):
             if eth.type == ETH_P_IP:
                 ip = eth.getlayer(IP)
                 if ip.proto == IP_PROTOS.icmp:
-                    self.log(f'Received ICMP packet from {ip.src} on {intf}.')
+                    icmp = ip.getlayer(ICMP)
+                    if icmp.type in (0, 8):
+                        self.log(f'Received ICMP packet from {ip.src} on {intf}.')
         except:
             traceback.print_exc()
 
