@@ -169,7 +169,7 @@ class Lab3Tester:
         return self.evaluate_lines(output_lines)
 
 class Scenario1(Lab3Tester):
-    cmd = ['cougarnet', '--stop=8', '--disable-ipv6',
+    cmd = ['cougarnet', '--stop=14', '--disable-ipv6',
             '--terminal=none', 'scenario1.cfg']
 
     expected_observations = [
@@ -188,7 +188,7 @@ class Scenario1(Lab3Tester):
             ]
 
 class Scenario2(Lab3Tester):
-    cmd = ['cougarnet', '--stop=11', '--disable-ipv6',
+    cmd = ['cougarnet', '--stop=14', '--disable-ipv6',
             '--terminal=none', 'scenario2.cfg']
 
     expected_observations = [
@@ -218,7 +218,7 @@ class Scenario2(Lab3Tester):
             ]
 
 class Scenario3(Lab3Tester):
-    cmd = ['cougarnet', '--stop=36', '--disable-ipv6',
+    cmd = ['cougarnet', '--stop=42', '--disable-ipv6',
             '--terminal=none', 'scenario3.cfg']
 
     expected_observations = [
@@ -270,6 +270,8 @@ class Scenario3(Lab3Tester):
                 ('ICMP', ['r2']),
                 ('ICMP', ['r8']),
                 ('ICMP', ['r7'])],
+            None,
+            None,
             None,
             None,
             None,
