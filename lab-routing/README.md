@@ -81,6 +81,10 @@ The files given to you for this lab are the following:
    to use `native_apps=no`, you are using your own
    implementation for sending Ethernet frames, ARP, IP forwarding, and
    routing!
+ - `prefix.py` - This blank file will be
+   [replaced](#copy-prefixpy) with the `prefix.py` you created in the
+   [Network-Layer Lab](../lab-network-layer/).  It is placed here only to allow
+   the [starter commands](#starter-commands) to run without error.
  - `scenario1.cfg`, `scenario2.cfg`, and `scenario3.cfg` -
    [network configuration files](https://github.com/cdeccio/cougarnet/blob/main/README.md#network-configuration-file)
    describing three topologies for testing your routing implementation.
