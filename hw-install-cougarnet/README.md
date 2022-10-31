@@ -14,7 +14,7 @@ Cougarnet:
 
 ```bash
 $ sudo apt install git python3-setuptools
-$ sudo apt install openvswitch-switch tmux lxterminal python3-pygraphviz libgraph-easy-perl tcpdump wireshark socat
+$ sudo apt install openvswitch-switch tmux python3-pyroute2 lxterminal python3-pygraphviz libgraph-easy-perl tcpdump wireshark socat
 ```
 
 ## Install Cougarnet
@@ -27,6 +27,11 @@ $ cd cougarnet
 $ python3 setup.py build
 $ sudo python3 setup.py install
 ```
+
+*Important:*  This must be done _outside_ of any shared folders that you have
+configured (see the
+[previous homework](../hw-create-vm/)).
+
 
 ## Configure System
 
