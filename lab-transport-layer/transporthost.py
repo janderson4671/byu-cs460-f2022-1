@@ -16,7 +16,35 @@ class TransportHost(Host):
         self.socket_mapping_tcp = {}
 
     def handle_tcp(self, pkt: bytes) -> None:
-        pass
+
+        # Grab 4-tuple information for map key (src, sport, dst, dport)
+        src = ip_binary_to_str(pkt[12:16])
+        dst = ip_binary_to_str(pkt[16:20])
+
+        sport, = struct.unpack("!H", pkt[20:22])
+        dport, = struct.unpack("!H", pkt[22:24])
+
+        key = (dst, dport, src, sport)
+
+        print(f"Key: {key}")
+
+        print(f"Host TCP Map Keys: {self.socket_mapping_tcp.keys()}")
+
+        if key not in self.socket_mapping_tcp.keys():
+            # Check for listening ones
+            listen_key = (dst, dport, None, None)
+            print(f"Listen Key: {listen_key}")
+
+            if listen_key not in self.socket_mapping_tcp.keys():
+                # Doesn't belong here
+                self.no_socket_tcp(pkt)
+            else:
+                socket: TCPSocketBase = self.socket_mapping_tcp[listen_key]
+                socket.handle_packet(pkt)
+        else:
+            # Call handle_packet on socket
+            socket: TCPSocketBase = self.socket_mapping_tcp[key]
+            socket.handle_packet(pkt)
 
     def handle_udp(self, pkt: bytes) -> None:
 
@@ -29,11 +57,9 @@ class TransportHost(Host):
         if key not in self.socket_mapping_udp.keys():
             self.no_socket_udp(pkt)
         else:
-            # Call receive on socket
+            # Call handle_packet on socket
             socket: UDPSocket = self.socket_mapping_udp[key]
             socket.handle_packet(pkt)
-
-        pass
 
     def install_socket_udp(self, local_addr: str, local_port: int,
             sock: UDPSocket) -> None:
