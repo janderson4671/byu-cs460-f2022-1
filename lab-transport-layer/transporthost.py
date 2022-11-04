@@ -6,6 +6,7 @@ from headers import IPv4Header, UDPHeader, TCPHeader, \
         TCPIP_HEADER_LEN, UDPIP_HEADER_LEN
 from host import Host
 from mysocket import UDPSocket, TCPSocketBase
+import struct
 
 class TransportHost(Host):
     def __init__(self, *args, **kwargs):
@@ -18,6 +19,20 @@ class TransportHost(Host):
         pass
 
     def handle_udp(self, pkt: bytes) -> None:
+
+        # Grab dest ip and dest port and use it to map to socket
+        dst = ip_binary_to_str(pkt[16:20])
+        dport, = struct.unpack("!H", pkt[22:24])
+
+        # See if it exists in map
+        key = (dst, dport)
+        if key not in self.socket_mapping_udp.keys():
+            self.no_socket_udp(pkt)
+        else:
+            # Call receive on socket
+            socket: UDPSocket = self.socket_mapping_udp[key]
+            socket.handle_packet(pkt)
+
         pass
 
     def install_socket_udp(self, local_addr: str, local_port: int,

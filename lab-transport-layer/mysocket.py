@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import random
+import struct
+from cougarnet.util import \
+        ip_str_to_binary, ip_binary_to_str
 
 TCP_FLAGS_SYN = 0x02
 TCP_FLAGS_RST = 0x04
@@ -41,17 +44,42 @@ class UDPSocket:
         self.buffer = []
 
     def handle_packet(self, pkt: bytes) -> None:
-        self.buffer.append((b'', '0.0.0.0', 0))
+
+        # Parse out src address and port along with data
+        src = ip_binary_to_str(pkt[12:16])
+        sport, = struct.unpack("!H", pkt[20:22])
+        data = pkt[28:]
+
+        print(f"Handling UDP Packet! \n SRC: {src}\n SPORT: {sport}\n DATA: {data}")
+
+        self.buffer.append((data, src, sport))
         self._notify_on_data()
 
     @classmethod
     def create_packet(cls, src: str, sport: int, dst: str, dport: int,
             data: bytes=b'') -> bytes:
-        pass
+        
+        # Create UDP Header obj
+        h_udp = UDPHeader(sport, dport, len(data) + UDP_HEADER_LEN, 0).to_bytes()
+
+        # Append data to h_udp for IP data
+        ip_data = h_udp + data
+
+        # Create IP Header
+        h_ip = IPv4Header(len(ip_data) + IP_HEADER_LEN, 64, IPPROTO_UDP, 0, src, dst).to_bytes()
+
+        # Append ip_data to h_ip for full packet
+        packet = h_ip + ip_data
+        return packet
 
     def send_packet(self, remote_addr: str, remote_port: int,
             data: bytes) -> None:
-        pass
+
+        # Create IP Packet
+        ip_packet = self.create_packet(self._local_addr, self._local_port, remote_addr, remote_port, data)
+
+        # Send it off
+        self._send_ip_packet(ip_packet)
 
     def recvfrom(self) -> tuple[bytes, str, int]:
         return self.buffer.pop(0)
