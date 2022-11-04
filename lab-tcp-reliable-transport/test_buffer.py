@@ -133,6 +133,13 @@ class TestBuffer(unittest.TestCase):
         self.assertEqual(buf.buffer,
                 {2033: b'mno'})
 
+        # make sure buffer does not accept data with seq number lower
+        # than base seq
+        buf.put(b'abc', 2021)
+        self.assertEqual(buf.base_seq, 2030)
+        self.assertEqual(buf.buffer,
+                {2033: b'mno'})
+
         # add missing data
         buf.put(b'jkl', 2030)
         self.assertEqual(buf.buffer,
