@@ -633,7 +633,7 @@ In the file `mysocket.py`, flesh out the following sender-side methods for the
 
    This method is called after a loss event--either after a timeout (i.e., as
    scheduled by the timer) or a triple-duplicate ACK (i.e., discovered in
-   `handle_ack()`).
+   `handle_ack()`--see [Part 4](#part-4---fast-retransmit)).
 
 In the file `mysocket.py`, flesh out the following receiver-side methods for
 the `TCPSocket` class.
