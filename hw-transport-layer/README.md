@@ -30,7 +30,7 @@ two hosts, `a` and `b`, connected to switch `s1`.
 Run the following command to create and start the network:
 
 ```bash
-cougarnet --display -w s1 h2-s1.cfg
+cougarnet --display --wireshark=a-s1 h2-s1.cfg
 ```
 
 
