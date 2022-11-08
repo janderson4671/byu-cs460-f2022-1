@@ -6,7 +6,14 @@ TCP Fast Open (TFO).
 
 # Getting Started
 
- 
+## Install Dependencies
+
+Make sure that `curl` is installed.
+
+```
+$ sudo apt install curl
+```
+
 ## Update Cougarnet
 
 Make sure you have the most up-to-date version of Cougarnet installed by
