@@ -397,8 +397,8 @@ In the file `mysocket.py`, flesh out following the skeleton methods:
    is what is called by `UDP.sendto()`.  Use the `remote_addr`, `remote_port`,
    and `data` arguments to create and send an UDP datagram with IP header, UDP
    header, and UDP payload (i.e., `data`).  Note that this function should
-   largely be implemented by calling `UDPHeader.create_packet()` and
-   `UDPHeader._send_ip_packet()`.
+   largely be implemented by calling `UDPSocket.create_packet()` and
+   `UDPSocket._send_ip_packet()`.
 
  - `handle_packet()`.  This method takes the following as an argument:
 
