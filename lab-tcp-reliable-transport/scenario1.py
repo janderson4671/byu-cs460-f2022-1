@@ -57,6 +57,8 @@ class FileSenderReceiver:
                     tot = self1.relative_seq_self(tcp.ack)
                     if self1.__acked_step_index < len(self1.__acked_steps) and \
                             tot >= self1.__acked_steps[self1.__acked_step_index]:
+                        if tot == size + 1:
+                            self1.__acked_step_index = STEPS
                         pct = int(self1.__acked_step_index*100/STEPS)
                         log(f'{pct}% has been acked')
                         self1.__acked_step_index += 1
@@ -69,6 +71,8 @@ class FileSenderReceiver:
                     tot = self1.relative_seq_self(seq) + len(data)
                     if self1.__sent_step_index < len(self1.__sent_steps) and \
                             tot >= self1.__sent_steps[self1.__sent_step_index]:
+                        if tot == size + 1:
+                            self1.__sent_step_index = STEPS
                         pct = int(self1.__sent_step_index*100/STEPS)
                         log(f'{pct}% has been sent')
                         self1.__sent_step_index += 1
@@ -84,6 +88,8 @@ class FileSenderReceiver:
                     tot = self1.relative_seq_other(tcp.seq) + len(data)
                     if self1.__recvd_step_index < len(self1.__recvd_steps) and \
                             tot >= self1.__recvd_steps[self1.__recvd_step_index]:
+                        if tot == size + 1:
+                            self1.__recvd_step_index = STEPS
                         pct = int(self1.__recvd_step_index*100/STEPS)
                         log(f'{pct}% has been recvd')
                         self1.__recvd_step_index += 1
