@@ -30,7 +30,7 @@ application-layer protocols such as HTTP, DNS, and SMTP.
     ```
 
     Then close and save the file.  That makes it so that applications on your
-    virtual machine (VM) resolve `bar.com`, `foo.bar.com`, and `bar.net` to
+    virtual machine (VM) resolve `bar.com`, `foo.bar.com`, and `foobar.com` to
     127.0.0.1, i.e., the loopback address on your system.  Thus, when your
     browser attempts to retrieve the Web page at `bar.com` (or any of the
     others), it will connect the Web server you will start on your VM
@@ -114,10 +114,11 @@ provide a brief but specific explanation.
     domain name in the URL)?
  4. In HTTP request 4, was a cookie sent by the client?  Why or why not?
  5. In HTTP request 5, was a cookie sent by the client?  Why or why not?
- 6. What was the response code associated with request 6?  Why?
- 7. What was the response code associated with request 7?  Why was it
+ 6. In HTTP request 6, was a cookie sent by the client?  Why or why not?
+ 7. What was the response code associated with request 6?  Why?
+ 8. What was the response code associated with request 7?  Why was it
     different than that of request 6?
- 8. What was the response code associated with request 8?  Why was it
+ 9. What was the response code associated with request 8?  Why was it
     different than that of request 7?
 
 
