@@ -60,12 +60,11 @@ The files given to you for this lab are the following:
    in which the `send_packet()` method simply picks an outgoing interface,
    creates a frame with the broadcast address as its destination, and sends the
    frame out the interface.
- - `transporthost.py` - a file containing a stub implementation of a host with
-   transport-layer capabilities.  It inherits from `Host` and overrides the
    `handle_udp()` and `handle_tcp()` methods.  You will also do your work here!
- - `transporthost.py` - a file containing a basic implementation of a host that has transport-layer capabilities.  Note that
-   this is pared down version of the `TransportHost` class you implemented in the
-   [Transport-Layer Lab](../lab-transport-layer)
+ - `transporthost.py` - a file containing a basic implementation of a host that
+   has transport-layer capabilities.  Note that this is pared down version of
+   the `TransportHost` class you implemented in the
+   [Transport-Layer Lab](../lab-transport-layer).
    in which the `handle_tcp()` simply expects a matching TCP connection to
    exist and calls `handle_packet()` on the corresponding socket, a `TCPSocket`
    instance.
