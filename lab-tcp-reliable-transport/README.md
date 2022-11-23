@@ -680,6 +680,23 @@ received.
 
 ## Testing
 
+*Note*: you might see the following error while testing your TCP
+implementation, either here or later on:
+
+```
+BlockingIOError: [errno 11] Resource temporarily unavailable
+```
+
+The reason is that the send buffers of the sockets that are used to pass
+packets between virtual hosts are getting filled up, and the sockets are set up
+for non-blocking I/O.  However, you should be able to ignore the errors, as
+your system (fortunately) _implements_ reliable transport, which means that if
+some segments are not received, they will be re-sent :)
+
+In short, there is a more elegant way that this might be handled in Cougarnet,
+but your code should get past this okay.
+
+
 ### No Loss
 
 First, test your TCP implementation to transfer the very small file `hello.txt`
