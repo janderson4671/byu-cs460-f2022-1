@@ -7,14 +7,15 @@ NEIGHBOR_CHECK_INTERVAL = 3
 DV_TABLE_SEND_INTERVAL = 1
 DV_PORT = 5016
 
-from cougarnet.networksched import NetworkEventLoop
+from cougarnet.sim.host import BaseHost
 
-from mysocket import UDPSocket
-from transporthost import TransportHost
+from .prefix import *
+from .mysocket import UDPSocket
+from .transporthost import TransportHost
 
 class DVRouter(TransportHost):
     def __init__(self):
-        super(DVRouter, self).__init__(True)
+        super().__init__(True)
 
         self.my_dv = {}
         self.neighbor_dvs = {}
@@ -24,79 +25,86 @@ class DVRouter(TransportHost):
 
         self._initialize_dv_sock()
 
-        self.event_loop = None
-
         # Do any further initialization here
 
-    def _initialize_dv_sock(self):
-        '''
-        Initialize the socket that will be used for sending and receiving DV
+    def _initialize_dv_sock(self) -> None:
+        '''Initialize the socket that will be used for sending and receiving DV
         communications to and from neighbors.
         '''
 
-        any_intf = self.get_first_interface()
+        any_intf = self.get_interface()
         self.sock = UDPSocket(
-                self.int_to_info[any_intf].ipv4addrs[0],
+                self.int_to_info[any_intf].ipv4_addrs[0],
                 DV_PORT,
                 self.send_packet, self._handle_msg)
-        for intf in self.int_to_info:
+        for intf in self.physical_interfaces:
             self.install_socket_udp(
-                    self.int_to_info[intf].ipv4addrs[0],
+                    self.int_to_info[intf].ipv4_addrs[0],
                     DV_PORT, self.sock)
             self.install_socket_udp(
-                    self.int_to_info[intf].ipv4broadcast,
+                    self.bcast_for_int(intf),
                     DV_PORT, self.sock)
 
-    def init_dv(self, event_loop):
-        '''
-        Set up our instance to work with the event loop, initialize our DV, and
-        schedule our regular updates to be sent to neighbors.
+    def init_dv(self):
+        '''Set up our instance to work with the event loop, initialize our DV,
+        and schedule our regular updates to be sent to neighbors.
         '''
 
-        # assign event_loop variable, so we can use it to schedule
-        self.event_loop = event_loop
+        loop = asyncio.get_event_loop()
+
+        # register our socket with the event loop, so we can handle datagrams
+        # as they come in
+        loop.add_reader(self.sock, self._handle_msg, self.sock)
 
         # Initialize our DV -- and optionally send our DV to our neighbors
         self.update_dv()
 
-        # Schedule self.send_dv_next() to be called every second
-        # (DV_TABLE_SEND_INTERVAL)
-        self.event_loop.schedule_event(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
+        # Schedule self.send_dv_next() to be called in 1 second and
+        # self.update_dv_next() to be called in 0.5 seconds.
+        loop.call_later(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
+        loop.call_later(DV_TABLE_SEND_INTERVAL - DV_TABLE_SEND_INTERVAL / 2,
+                self.update_dv_next)
 
-    def _handle_msg(self):
-        '''
-        Receive and handle a message received on the UDP socket that is being
-        used for DV messages.
+    def _handle_msg(self) -> None:
+        ''' Receive and handle a message received on the UDP socket that is
+        being used for DV messages.
         '''
 
         data, addr, port = self.sock.recvfrom()
-        return self.handle_dv_message(data)
+        self.handle_dv_message(data)
 
-    def _send_msg(self, msg, dst):
-        '''
-        Send a DV message, msg, on our UDP socket to dst.
-        '''
+    def _send_msg(self, msg: bytes, dst: str) -> None:
+        '''Send a DV message, msg, on our UDP socket to dst.'''
 
         self.sock.sendto(msg, dst, DV_PORT)
 
-    def handle_dv_message(self, msg):
+    def handle_dv_message(self, msg: bytes) -> None:
         pass
 
     def send_dv_next(self):
+        '''Send DV to neighbors, and schedule this method to be called again in
+        1 second (DV_TABLE_SEND_INTERVAL).
         '''
-        Send DV to neighbors, and schedule this method to be called again in 1
-        second (DV_TABLE_SEND_INTERVAL).
-        '''
-        self.send_dv()
-        self.event_loop.schedule_event(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
 
-    def handle_down_link(self, neighbor):
+        self.send_dv()
+        loop = asyncio.get_event_loop()
+        loop.call_later(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
+
+    def update_dv_next(self):
+        '''Update DV using neighbors' DVs.  Then schedule this method to be
+        called again in 1 second (DV_TABLE_SEND_INTERVAL).
+        '''
+
+        self.update_dv()
+        loop = asyncio.get_event_loop()
+        loop.call_later(DV_TABLE_SEND_INTERVAL, self.update_dv_next)
+
+    def handle_down_link(self, neighbor: str):
         self.log(f'Link down: {neighbor}')
 
     def resolve_neighbor_dvs(self):
-        '''
-        Return a copy of the mapping of neighbors to distance vectors, with IP
-        addresses replaced by names in every neighbor DV.
+        '''Return a copy of the mapping of neighbors to distance vectors, with
+        IP addresses replaced by names in every neighbor DV.
         '''
 
         neighbor_dvs = {}
@@ -104,9 +112,8 @@ class DVRouter(TransportHost):
             neighbor_dvs[neighbor] = self.resolve_dv(self.neighbor_dvs[neighbor])
         return neighbor_dvs
 
-    def resolve_dv(self, dv):
-        '''
-        Return a copy of distance vector dv with IP addresses replaced by
+    def resolve_dv(self, dv: dict) -> dict:
+        '''Return a copy of distance vector dv with IP addresses replaced by
         names.
         '''
 
@@ -120,20 +127,31 @@ class DVRouter(TransportHost):
             resolved_dv[dst] = distance
         return resolved_dv
 
-    def update_dv(self):
+    def update_dv(self) -> None:
         pass
 
-    def send_dv(self):
+    def bcast_for_int(self, intf: str) -> str:
+        ip_int = ip_str_to_int(self.int_to_info[intf].ipv4_addrs[0])
+        ip_prefix_int = ip_prefix(ip_int, socket.AF_INET, self.int_to_info[intf].ipv4_prefix_len)
+        ip_bcast_int = ip_prefix_last_address(ip_prefix_int, socket.AF_INET, self.int_to_info[intf].ipv4_prefix_len)
+        bcast = ip_int_to_str(ip_bcast_int, socket.AF_INET)
+        return bcast
+
+    def send_dv(self) -> None:
         print('Sending DV')
 
 
 def main():
     hostname = socket.gethostname()
 
-    router = DVRouter()
-    event_loop = NetworkEventLoop(router._handle_frame)
-    router.init_dv(event_loop)
-    event_loop.run()
+    with router as DVRouter():
+        router.init_dv()
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()

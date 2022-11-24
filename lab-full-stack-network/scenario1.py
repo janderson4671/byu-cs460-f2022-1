@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import asyncio
 import os
 import socket
 import sys
@@ -9,11 +10,9 @@ import traceback
 from scapy.all import IP, ICMP
 from scapy.data import IP_PROTOS 
 
-from cougarnet.networksched import NetworkEventLoop
+from host import BaseHost
 
-from host import Host
-
-class SimHost(Host):
+class SimHost(BaseHost):
     def __init__(self, *args, **kwargs):
         super(SimHost, self).__init__(*args, **kwargs)
 
@@ -44,14 +43,15 @@ class SimHost(Host):
 
         self.send_packet(bytes(pkt))
 
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         pass
 
 class SimHostA(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         args = ('10.0.0.2', '10.0.0.255', 1, 1, 1)
 
-        event_loop.schedule_event(4, self.send_icmp_echo, args)
+        loop = asyncio.get_event_loop()
+        loop.call_later(4, self.send_icmp_echo, *args)
         
 
 def main():
@@ -67,10 +67,14 @@ def main():
     else:
         cls = SimHost
 
-    host = cls(args.router)
-    event_loop = NetworkEventLoop(host._handle_frame)
-    host.schedule_items(event_loop)
-    event_loop.run()
+    with cls(args.router) as host:
+        host.schedule_items()
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()

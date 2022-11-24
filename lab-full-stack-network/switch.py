@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
-from cougarnet.networksched import NetworkEventLoop
-from cougarnet.rawpkt import BaseFrameHandler
+import asyncio
+from cougarnet.sim.host import BaseHost
 
-class Switch(BaseFrameHandler):
+class Switch(BaseHost):
     def __init__(self):
         super(Switch, self).__init__()
 
@@ -13,9 +13,13 @@ class Switch(BaseFrameHandler):
         print('Received frame: %s' % repr(frame))
 
 def main():
-    switch = Switch()
-    event_loop = NetworkEventLoop(switch._handle_frame)
-    event_loop.run()
+    with Switch() as switch:
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()

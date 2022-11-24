@@ -17,9 +17,9 @@ from nc import NetcatUDP
 from transporthost import TransportHost
 
 
-A_PORT = random.randint(1024, 65535)
-B_PORT = 1234
-C_PORT = random.randint(1024, 65535)
+A_PORT = 1111
+B_PORT = 2222
+C_PORT = 3333
 
 class SimHost(TransportHost):
     def _handle_frame(self, frame, intf):

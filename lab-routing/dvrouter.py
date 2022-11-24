@@ -13,7 +13,7 @@ from forwarding_table_native import ForwardingTableNative as ForwardingTable
 
 class DVRouter(BaseHost):
     def __init__(self):
-        super(DVRouter, self).__init__()
+        super().__init__()
 
         self.my_dv = {}
         self.neighbor_dvs = {}
