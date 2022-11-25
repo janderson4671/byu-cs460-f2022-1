@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import asyncio
 import random
 import socket
 import sys
@@ -10,13 +11,12 @@ from scapy.all import ARP, Ether, IP, Raw, TCP
 from scapy.data import IP_PROTOS
 from scapy.layers.inet import ETH_P_IP
 
-from cougarnet.networksched import NetworkEventLoop
-
 from echoserver import EchoServerTCP
-from host import ETH_P_ARP, ARPOP_REQUEST, ARPOP_REPLY
+from host import Host, ETH_P_ARP, ARPOP_REQUEST, ARPOP_REPLY
 from nc import NetcatTCP
 from transporthost import TransportHost
 
+START_TIME = 6
 
 B_PORT = 4567
 
@@ -26,7 +26,7 @@ class SimHost(TransportHost):
             eth = Ether(frame)
             if eth.type == ETH_P_IP:
                 ip = eth.getlayer(IP)
-                if ip.dst == self.int_to_info[intf].ipv4addrs[0]:
+                if ip.dst == self.int_to_info[intf].ipv4_addrs[0]:
                     if ip.proto == IP_PROTOS.tcp:
                         tcp = ip.getlayer(TCP)
                         data = ip.getlayer(Raw)
@@ -49,59 +49,67 @@ class SimHost(TransportHost):
             traceback.print_exc()
         super(SimHost, self)._handle_frame(frame, intf)
 
-    def start_nc(self, remote_addr, remote_port, event_loop):
-        intf = self.get_first_interface()
-        local_addr = self.int_to_info[intf].ipv4addrs[0]
+    def start_nc(self, remote_addr, remote_port):
+        intf = self.get_interface()
+        local_addr = self.int_to_info[intf].ipv4_addrs[0]
         local_port = random.randint(1024, 65536)
 
         nc = NetcatTCP(local_addr, local_port,
                 remote_addr, remote_port,
-                self.send_packet, event_loop)
+                self.send_packet)
         self.install_socket_tcp(local_addr, local_port, remote_addr, remote_port, nc.sock)
         self.nc = nc
 
-    def start_echo(self, local_port, event_loop):
-        intf = self.get_first_interface()
-        local_addr = self.int_to_info[intf].ipv4addrs[0]
+    def start_echo(self, local_port):
+        intf = self.get_interface()
+        local_addr = self.int_to_info[intf].ipv4_addrs[0]
 
         echo = EchoServerTCP(local_addr, local_port,
                 self.install_socket_tcp,
-                self.send_packet, event_loop)
+                self.send_packet)
         self.install_listener_tcp(local_addr, local_port, echo.sock)
         self.echo = echo
 
     def send_to_nc(self, msg):
         self.nc.send(msg)
 
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         pass
 
 class SimHostA(SimHost):
 
-    def schedule_items(self, event_loop):
-        args = ('10.0.2.2', B_PORT, event_loop)
+    def schedule_items(self):
+        args = ('10.0.2.2', B_PORT)
 
-        event_loop.schedule_event(12, self.start_nc, args)
-        event_loop.schedule_event(13, self.send_to_nc, ('hello world (A)',))
-        event_loop.schedule_event(16, self.send_to_nc, ('hello Provo (A)',))
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME, self.log, 'START')
+        loop.call_later(START_TIME + 2, self.start_nc, *args)
+        loop.call_later(START_TIME + 3, self.send_to_nc, 'hello world (A)')
+        loop.call_later(START_TIME + 6, self.send_to_nc, 'hello Provo (A)')
 
 class SimHostB(SimHost):
 
-    def schedule_items(self, event_loop):
-        args = ('10.0.2.2', B_PORT, event_loop)
+    def schedule_items(self):
+        args = ('10.0.2.2', B_PORT)
 
-        event_loop.schedule_event(14, self.start_nc, args)
-        event_loop.schedule_event(15, self.send_to_nc, ('hello internet (B)',))
-        event_loop.schedule_event(17, self.send_to_nc, ('hello BYU (B)',))
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME + 4, self.start_nc, *args)
+        loop.call_later(START_TIME + 5, self.send_to_nc, 'hello internet (B)')
+        loop.call_later(START_TIME + 7, self.send_to_nc, 'hello BYU (B)')
 
 class SimHostD(SimHost):
-    def schedule_items(self, event_loop):
-        args = (B_PORT, event_loop)
+    def schedule_items(self):
+        args = (B_PORT,)
 
-        event_loop.schedule_event(10, self.start_echo, args)
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME + 1, self.start_echo, *args)
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--router', '-r',
+            action='store_const', const=True, default=False,
+            help='Act as a router by forwarding IP packets')
+    args = parser.parse_args(sys.argv[1:])
 
     hostname = socket.gethostname()
     if hostname == 'a':
@@ -113,10 +121,14 @@ def main():
     else:
         cls = SimHost
 
-    host = cls(False)
-    event_loop = NetworkEventLoop(host._handle_frame)
-    host.schedule_items(event_loop)
-    event_loop.run()
+    with cls(args.router) as host:
+        host.schedule_items()
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()
