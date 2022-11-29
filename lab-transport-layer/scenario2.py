@@ -15,7 +15,7 @@ from mysocket import TCPListenerSocket, TCPSocket, TCP_STATE_ESTABLISHED, TCP_FL
 from transporthost import TransportHost
 
 
-B_PORT = 11111
+B_PORT = 1234
 
 class SimHost(TransportHost):
     def _handle_frame(self, frame, intf):
@@ -50,8 +50,8 @@ class SimHost(TransportHost):
                 remote_addr, remote_port, TCP_STATE_ESTABLISHED,
                 send_ip_packet_func, notify_on_data_func)
         self.install_socket_tcp(local_addr, local_port, remote_addr, remote_port, sock)
-        sock.send_packet(77777,
-                88888, TCP_FLAGS_ACK, b'')
+        sock.send_packet(random.randint(0, 0xffffffff),
+                random.randint(0, 0xffffffff), TCP_FLAGS_ACK, b'')
 
     def do_nothing(self):
         pass
@@ -59,11 +59,11 @@ class SimHost(TransportHost):
 
 class SimHostA(SimHost):
     def schedule_items(self):
-        args1 = ('10.0.0.1', 22222, '10.0.0.2', B_PORT,
+        args1 = ('10.0.0.1', random.randint(1024, 65536), '10.0.0.2', B_PORT,
                 self.send_packet, self.do_nothing)
-        args2 = ('10.0.0.1', 33333, '10.0.0.2', B_PORT,
+        args2 = ('10.0.0.1', random.randint(1024, 65536), '10.0.0.2', B_PORT,
                 self.send_packet, self.do_nothing)
-        args3 = ('10.0.0.1', 44444, '10.0.0.2', B_PORT,
+        args3 = ('10.0.0.1', random.randint(1024, 65536), '10.0.0.2', B_PORT,
                 self.send_packet, self.do_nothing)
 
         loop = asyncio.get_event_loop()
@@ -87,7 +87,7 @@ class SimHostB(SimHost):
 
 class SimHostC(SimHost):
     def schedule_items(self):
-        args = ('10.0.0.3', 55555, '10.0.0.2', B_PORT,
+        args = ('10.0.0.3', random.randint(1024, 65535), '10.0.0.2', B_PORT,
                 self.send_packet, self.do_nothing)
 
         loop = asyncio.get_event_loop()
