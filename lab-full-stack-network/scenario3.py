@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import asyncio
 import os
 import socket
 import sys
@@ -9,24 +10,27 @@ import traceback
 from scapy.all import IP, ICMP
 from scapy.data import IP_PROTOS 
 
-from cougarnet.networksched import NetworkEventLoop
-
 from host import Host
+
+START_TIME = 6
 
 class SimHost(Host):
     def __init__(self, *args, **kwargs):
-        super(SimHost, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def handle_ip(self, pkt, intf):
         try:
             ip = IP(pkt)
             if ip.proto == IP_PROTOS.icmp:
-                self.log(f'Received ICMP packet {ip.src} -> {ip.dst} on {intf}.')
+                icmp = ip.getlayer(ICMP)
+                if icmp.type in (0, 8):
+                    self.log(f'Received ICMP packet from {ip.src} on {intf}.')
         except:
             traceback.print_exc()
-        super(SimHost, self).handle_ip(pkt, intf)
+        super().handle_ip(pkt, intf)
 
     def send_icmp_echo(self, src, dst, id, seq, ttl=None):
+        self.log(f'Sending ICMP packet to {dst}')
         ip = IP(src=src, dst=dst, proto=IP_PROTOS.icmp)
         if ttl is not None:
             ip.ttl = ttl
@@ -35,22 +39,23 @@ class SimHost(Host):
 
         self.send_packet(bytes(pkt))
 
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         pass
 
 class SimHostA(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         args = ('10.0.0.2', '10.0.2.2', 1, 1)
 
-        event_loop.schedule_event(10, self.send_icmp_echo, args)
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME, self.log, 'START')
+        loop.call_later(START_TIME + 1, self.send_icmp_echo, *args)
         
 class SimHostD(SimHost):
-    def schedule_items(self, event_loop):
+    def schedule_items(self):
         args = ('10.0.2.2', '10.0.0.2', 1, 1)
 
-        event_loop.schedule_event(11, self.send_icmp_echo, args)
-        
-
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME + 2, self.send_icmp_echo, *args)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -67,10 +72,14 @@ def main():
     else:
         cls = SimHost
 
-    host = cls(args.router)
-    event_loop = NetworkEventLoop(host._handle_frame)
-    host.schedule_items(event_loop)
-    event_loop.run()
+    with cls(args.router) as host:
+        host.schedule_items()
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()

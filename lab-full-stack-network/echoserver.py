@@ -2,7 +2,7 @@ from mysocket import TCPListenerSocket
 
 class EchoServerTCP:
     def __init__(self, local_addr, local_port, install_client_sock,
-            send_ip_packet_func, event_loop, **socket_kwargs):
+            send_ip_packet_func, **socket_kwargs):
 
         #XXX hack to override native _notify_on_data() for socket multiplexing
         def do_nothing():
@@ -10,7 +10,7 @@ class EchoServerTCP:
 
         self.sock = TCPListenerSocket(local_addr, local_port,
                 self.handle_new_client, send_ip_packet_func,
-                do_nothing, event_loop, **socket_kwargs)
+                do_nothing, **socket_kwargs)
 
         self._install_client_sock = install_client_sock
 

@@ -4,6 +4,7 @@ The objective of this assignment is to give you hands-on experience with TCP.
 You will implement much of TCP, such that bytes are sent reliably in-order
 between TCP sockets connected over a TCP connection.
 
+
 # Table of Contents
 
  - [Getting Started](#getting-started)
@@ -59,17 +60,16 @@ The files given to you for this lab are the following:
    in which the `send_packet()` method simply picks an outgoing interface,
    creates a frame with the broadcast address as its destination, and sends the
    frame out the interface.
- - `transporthost.py` - a file containing a stub implementation of a host with
-   transport-layer capabilities.  It inherits from `Host` and overrides the
    `handle_udp()` and `handle_tcp()` methods.  You will also do your work here!
- - `transporthost.py` - a file containing a basic implementation of a host that has transport-layer capabilities.  Note that
-   this is pared down version of the `TransportHost` class you implemented in the
-   [Transport-Layer Lab](../lab-transport-layer)
+ - `transporthost.py` - a file containing a basic implementation of a host that
+   has transport-layer capabilities.  Note that this is pared down version of
+   the `TransportHost` class you implemented in the
+   [Transport-Layer Lab](../lab-transport-layer).
    in which the `handle_tcp()` simply expects a matching TCP connection to
    exist and calls `handle_packet()` on the corresponding socket, a `TCPSocket`
    instance.
- - `test.txt` and `byu-y-mtn.jpg` - files that are to transferred from one host
-   to another to test your reliable transfer functionality.
+ - `hello.txt`, `test.txt` and `byu-y-mtn.jpg` - files that are to transferred
+   from one host to another to test your reliable transfer functionality.
  - `mysocket.py` - a file containing a stub code for a TCP socket.  You will
    also do your work here!
  - `scenario1.cfg` - a
@@ -82,35 +82,29 @@ The files given to you for this lab are the following:
 ## Helpful Reading
 Read Section 3.5.4 ("Reliable Data Transfer") in the book.
 
+
 ## Topology
 
 The file `scenario1.cfg` describes a network topology in which hosts `a` and
-`b` are connected to each other via a single switch, `s1`.
+`b` are directly connected.
 
 ```
-+----+
-| a  |
-+----+
++---+
+| a |
++---+
   |
   |
   |
-+----+
-| s1 |
-+----+
-  |
-  |
-  |
-+----+
-| b  |
-+----+
++---+
+| b |
++---+
 ```
 
-`s1` has switching functionality already built in, and all hosts have the
-basic functionality of taking a packet, encapusulating in an Ethernet frame,
-and sending it to the appropriate host on its LAN/subnet.  Additionally,
-rudimentary transport-layer multiplexing functionality has been implemented for
-you.  What you will be adding is a reliable data channel for sending data
-between the two hosts, over an established connection.
+Both hosts have the basic functionality of taking a packet, encapusulating in
+an Ethernet frame, and sending it to the appropriate host on its LAN/subnet.
+Additionally, rudimentary transport-layer multiplexing functionality has been
+implemented for you.  What you will be adding is a reliable data channel for
+sending data between the two hosts, over an established connection.
 
 
 # Part 1 - TCP Send Buffer
@@ -411,14 +405,14 @@ In the file `buffer.py`, flesh out the following methods for the
      or equal to`base_seq`, then ignore it.  It is old data.
 
      For example, if `base_seq = 2021`, and a segment with sequence 2001 and
-     length 4 is received, it is discarded.
+     length 4 is received, it is discarded (i.e.., because 2001 + 4 <= 2021).
    - If a segment is received, and its starting sequence number is less than
      `base_seq`, but its length makes it extend to `base_seq` or beyond, then
      trim the first bytes off, so that it starts with `base_seq` and is stored
      in the dictionary accordingly.
 
      For example, if `base_seq = 2021`, and data with sequence 2019 and length
-     3 is received, the first two bytes of the segment are discarded, the
+     4 is received, the first two bytes of the segment are discarded, the
      remaining two bytes are given starting sequence 2021.
    - If a segment arrives with the same sequence number as another segment that
      has previously been received, keep only the segment that is the longest.
@@ -633,7 +627,7 @@ In the file `mysocket.py`, flesh out the following sender-side methods for the
 
    This method is called after a loss event--either after a timeout (i.e., as
    scheduled by the timer) or a triple-duplicate ACK (i.e., discovered in
-   `handle_ack()`).
+   `handle_ack()`--see [Part 4](#part-4---fast-retransmit)).
 
 In the file `mysocket.py`, flesh out the following receiver-side methods for
 the `TCPSocket` class.
@@ -686,21 +680,56 @@ received.
 
 ## Testing
 
+*Note*: you might see the following error while testing your TCP
+implementation, either here or later on:
+
+```
+BlockingIOError: [errno 11] Resource temporarily unavailable
+```
+
+The reason is that the send buffers of the sockets that are used to pass
+packets between virtual hosts are getting filled up, and the sockets are set up
+for non-blocking I/O.  However, you should be able to ignore the errors, as
+your system (fortunately) _implements_ reliable transport, which means that if
+some segments are not received, they will be re-sent :)
+
+In short, there is a more elegant way that this might be handled in Cougarnet,
+but your code should get past this okay.
+
+
 ### No Loss
 
-First, test your TCP implementation to transfer the file `test.txt` over the
-TCP connection without any loss using a fixed congestion window size of 10,000
-bytes:
+First, test your TCP implementation to transfer the very small file `hello.txt`
+over the TCP connection:
 
 ```
-$ cougarnet --vars loss=0,window=10000,file=test.txt,fast_retransmit=off scenario1.cfg
+$ cougarnet --wireshark a-b --vars loss=0,window=10000,file=hello.txt,fast_retransmit=off scenario1.cfg
 ```
 
-You can also run Wireshark to see the action on the wire!
+Because it is so small, it will all fit within a single segment (and, of
+course, in a single window).  Check the wireshark output to make sure the
+sequence, acknowledgment numbers, and segment lengths look correct.  Then check
+that it was actually received properly:
 
 ```
-$ cougarnet --wireshark s1 --vars loss=0,window=10000,file=test.txt,fast_retransmit=off scenario1.cfg
+$ cat downloads/hello.txt
+hello world
+$ sha1sum hello.txt downloads/hello.txt
+22596363b3de40b06f981fb85d82312e8c0ed511  hello.txt
+22596363b3de40b06f981fb85d82312e8c0ed511  downloads/hello.txt
 ```
+
+(The file in the `downloads` directory is the transferred version of the file.)
+
+Now, test your TCP implementation to transfer the much larger `test.txt` over
+the TCP connection without any loss using a fixed congestion window size of
+10,000 bytes:
+
+```
+$ cougarnet --wireshark a-b --vars loss=0,window=10000,file=test.txt,fast_retransmit=off scenario1.cfg
+```
+
+(Running with `--wireshark` is optional, but you might find it helpful.)
 
 The file should transfer in no more than a second or two, and it should be in
 tact:
@@ -711,10 +740,7 @@ e742dc9de5bac34d82117e015f597378a205e5c1  test.txt
 e742dc9de5bac34d82117e015f597378a205e5c1  downloads/test.txt
 ```
 
-(The former is the original file itself, and the latter is the transferred
-version.)
-
-When this is working, test on a larger file, `byu-y-mtn.jpg`:
+When this is working, test on an even larger file, `byu-y-mtn.jpg`:
 
 ```
 $ cougarnet --vars loss=0,window=10000,file=byu-y-mtn.jpg,fast_retransmit=off scenario1.cfg
@@ -773,6 +799,7 @@ $ cougarnet --vars loss=0,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off --
 $ cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=off --terminal=none scenario1.cfg
 $ cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off --terminal=none scenario1.cfg
 ```
+
 
 # Part 4 - Fast Retransmit
 
@@ -887,21 +914,20 @@ you to specify a congestion control algorithm on the command line, e.g.,
 Run the following command to run the file transfer with no loss:
 
 ```
-$ cougarnet -w s1 --vars loss=0,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
+$ cougarnet --wireshark a-b --vars loss=0,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
 ```
 
-Immediately begin a packet capture on interface `s1-a`.  When the file is done
-transmitting, select one of the packets in the capture window.  Then select
-"Statistics" from the Wireshark menu.  Then hover over "TCP Stream Graphs" in
-the menu that appears, and click on "Time Sequence (Stevens").  When the plot
-appears, you will probably need to click the "Switch Direction" button to get
-the correct view.  Click "zooms" next to "Mouse", and then highlight the
-rectangle between coordinates (0, 0) (the origin) and (1, 250,000) to zoom in
-on this region.  If you have implemented it properly, you should see the
-exponential growth associated with the slow start state (beginning at 0)
-followed by congestion avoidance (starting at around 0.8 seconds).  If you need
-a reminder of the meaning of the Time Sequence plot or whether or not it is
-showing correct behavior, refer to the
+When the file is done transmitting, select one of the packets in the capture
+window.  Then select "Statistics" from the Wireshark menu.  Then hover over
+"TCP Stream Graphs" in the menu that appears, and click on "Time Sequence
+(Stevens").  When the plot appears, you will probably need to click the "Switch
+Direction" button to get the correct view.  Click "zooms" next to "Mouse", and
+then highlight the rectangle between coordinates (0, 0) (the origin) and (1,
+250,000) to zoom in on this region.  If you have implemented it properly, you
+should see the exponential growth associated with the slow start state
+(beginning at 0) followed by congestion avoidance (starting at around 0.8
+seconds).  If you need a reminder of the meaning of the Time Sequence plot or
+whether or not it is showing correct behavior, refer to the
 [Transport-Layer Homework](../hw-transport-layer)
 
 If everything looks good, click "Save As...", and save the file as
@@ -910,22 +936,21 @@ If everything looks good, click "Save As...", and save the file as
 Now run the following command to test with 0.1% loss:
 
 ```
-$ cougarnet -w s1 --vars loss=0.1,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
+$ cougarnet --wireshark a-b --vars loss=0.1,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
 ```
 
-Immediately begin a packet capture on interface `s1-a`.  When the file is done
-transmitting, select one of the packets in the capture window.  Then select
-"Statistics" from the Wireshark menu.  Hover over "TCP Stream Graphs" in
-the menu that appears.  This time click on "Window Scaling".  When the plot
-appears, you will probably need to click the "Switch Direction" button to get
-the correct view.  The Window Scaling plot shows the observed congestion window
-over time (Remember the only party that knows the actual value of `cwnd` is the
-sender).  You should see a sawtooth pattern in the observed window size, with
-periodic increases followed by drastic reductions to zero.  If you look
-closely, you should also be able to see the slow start and congestion avoidance
-phases, but they are harder to pick out in this plot (Note that you can also
-get a view of the Time Sequence graph of this data, by selecting it from the
-"Type" dropdown).
+When the file is done transmitting, select one of the packets in the capture
+window.  Then select "Statistics" from the Wireshark menu.  Hover over "TCP
+Stream Graphs" in the menu that appears.  This time click on "Window Scaling".
+When the plot appears, you will probably need to click the "Switch Direction"
+button to get the correct view.  The Window Scaling plot shows the observed
+congestion window over time (Remember the only party that knows the actual
+value of `cwnd` is the sender).  You should see a sawtooth pattern in the
+observed window size, with periodic increases followed by drastic reductions to
+zero.  If you look closely, you should also be able to see the slow start and
+congestion avoidance phases, but they are harder to pick out in this plot (Note
+that you can also get a view of the Time Sequence graph of this data, by
+selecting it from the "Type" dropdown).
 
 If everything looks good, click "Save As...", and save the file as
 `tahoe-someloss.png`.  Make sure the image is of the Window Scaling graph, not

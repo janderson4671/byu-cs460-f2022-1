@@ -9,7 +9,11 @@ from scapy.all import Ether, IP, ICMP
 from scapy.data import IP_PROTOS 
 from scapy.layers.inet import ETH_P_IP
 
+from cougarnet.sim.sys_cmd import sys_cmd_pid
+
 from dvrouter import DVRouter
+
+START_TIME = 6
 
 class SimHost(DVRouter):
     def _handle_frame(self, frame, intf):
@@ -30,9 +34,8 @@ class SimHost(DVRouter):
         subprocess.run(cmd)
 
     def drop_link(self, intf):
-        cmd = ['sudo', 'iptables', '-A', 'INPUT', '-i', intf, '-j', 'DROP']
         self.log(f'Dropping link {intf}')
-        subprocess.run(cmd)
+        sys_cmd_pid(['set_iptables_drop', intf], check=True)
 
     def schedule_items(self):
         pass
@@ -40,14 +43,14 @@ class SimHost(DVRouter):
 class SimHost1(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(3, self.log, 'START')
-        loop.call_later(4, self.send_icmp_echo, 'r5')
-        loop.call_later(7, self.log, 'STOP')
+        loop.call_later(START_TIME, self.log, 'START')
+        loop.call_later(START_TIME + 1, self.send_icmp_echo, 'r5')
+        loop.call_later(START_TIME + 4, self.log, 'STOP')
 
 class SimHost2(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(5, self.send_icmp_echo, 'r4')
+        loop.call_later(START_TIME + 2, self.send_icmp_echo, 'r4')
 
 def main():
     hostname = socket.gethostname()

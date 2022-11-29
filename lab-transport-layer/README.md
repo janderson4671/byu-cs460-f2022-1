@@ -397,8 +397,8 @@ In the file `mysocket.py`, flesh out following the skeleton methods:
    is what is called by `UDP.sendto()`.  Use the `remote_addr`, `remote_port`,
    and `data` arguments to create and send an UDP datagram with IP header, UDP
    header, and UDP payload (i.e., `data`).  Note that this function should
-   largely be implemented by calling `UDPHeader.create_packet()` and
-   `UDPHeader._send_ip_packet()`.
+   largely be implemented by calling `UDPSocket.create_packet()` and
+   `UDPSocket._send_ip_packet()`.
 
  - `handle_packet()`.  This method takes the following as an argument:
 
@@ -419,15 +419,19 @@ scenario 1:
 $ cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario1.cfg
 ```
 
-You have 5 seconds to select the `s1-b` interface before the UDP packet is sent
-by host `a`.  At this point, you should see a log message indicating that host
-`a` is sending the message, you should see that packet in your Wireshark
-output, and you should see a log message indicating that it was received by
-host `b`.  However, you should not expect to see a log message that it has been
-received by the application running on `b`.  Nor should you see a return packet
-in the Wireshark output.  That is because you are missing the transport-layer
-multiplexing--the glue that passes the incoming packets to their correct
-socket.
+After a few seconds, you should see a log message indicating that host `a` is
+sending the message, you should see that packet in your Wireshark output, and
+you should see a log message indicating that it was received by host `b`.
+
+*Note:* If packets are being sent before Wireshark is ready to capture them, you
+can add `--start=10` to add a 10-second delay to the scenario, so Wireshark can
+catch up.
+
+You should _not_ expect to see a log message that the message has been received
+by the _application_ running on `b` (i.e., the UDP echo server).  Nor should
+you see a return packet in the Wireshark output.  That is because you are
+missing the transport-layer multiplexing--the glue that passes the incoming
+packets to their correct socket.
 
 In the file `transporthost.py`, flesh out following method:
 
@@ -645,14 +649,17 @@ At this point, you should be able to run the following command to run scenario
 ```bash
 $ cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario2.cfg
 ```
+After a few seconds, you should see log messages for packets the TCP SYN
+packets sent in the scenario, and you should also see those packets in the
+Wireshark output.
 
-You have 5 seconds to select the `s1-b` interface before the initial TCP SYN
-packet is sent by host `a`.  At this point, you should see log messages for
-packets the TCP SYN packets sent in the scenario, and you should
-also see those packets in the Wireshark output.  However, you should not see
-any return packets (e.g., the SYNACK).  That is because you are missing the
-transport-layer multiplexing--the glue that passes the incoming packets to
-their correct socket.
+*Note:* If packets are being sent before Wireshark is ready to capture them, you
+can add `--start=10` to add a 10-second delay to the scenario, so Wireshark can
+catch up.
+
+You should not see any return packets (e.g., the SYNACK).  That is because you
+are missing the transport-layer multiplexing--the glue that passes the incoming
+packets to their correct socket.
 
 In the file `transporthost.py`, flesh out following method:
 

@@ -28,7 +28,7 @@ class ForwardingTableNative:
         if intf is None:
             intf = ''
 
-        sys_cmd_pid(['add_route', prefix, intf, next_hop])
+        sys_cmd_pid(['add_route', prefix, intf, next_hop], check=True)
 
     def remove_entry(self, prefix: str) -> None:
         '''Remove the forwarding entry matching prefix.
@@ -41,7 +41,7 @@ class ForwardingTableNative:
                 prefix += '/128'
             else:
                 prefix += '/32'
-        sys_cmd_pid(['del_route', prefix])
+        sys_cmd_pid(['del_route', prefix], check=True)
 
     def flush(self, family: int=None, global_only: bool=True) -> None:
         '''Flush the routing table.

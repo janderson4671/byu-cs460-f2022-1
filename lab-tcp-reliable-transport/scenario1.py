@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import asyncio
 import os
 import random
 import socket
@@ -11,11 +12,10 @@ from scapy.all import IP, Raw, TCP
 from scapy.data import IP_PROTOS
 from scapy.layers.inet import ETH_P_IP
 
-from cougarnet.networksched import NetworkEventLoop
-
 from mysocket import TCPSocket, TCP_STATE_ESTABLISHED
 from transporthost import TransportHost
 
+START_TIME = 4
 
 A_PORT = 4321
 A_INITIAL_SEQ = 13850
@@ -29,7 +29,7 @@ class FileSenderReceiver:
             remote_addr, remote_port,
             local_initial_seq, remote_initial_seq,
             fast_retransmit, window, filename,
-            send_ip_packet_func, event_loop, log):
+            send_ip_packet_func, log):
 
         self.filename = filename
         size = os.stat(filename).st_size
@@ -57,6 +57,8 @@ class FileSenderReceiver:
                     tot = self1.relative_seq_self(tcp.ack)
                     if self1.__acked_step_index < len(self1.__acked_steps) and \
                             tot >= self1.__acked_steps[self1.__acked_step_index]:
+                        if tot == size + 1:
+                            self1.__acked_step_index = STEPS
                         pct = int(self1.__acked_step_index*100/STEPS)
                         log(f'{pct}% has been acked')
                         self1.__acked_step_index += 1
@@ -69,6 +71,8 @@ class FileSenderReceiver:
                     tot = self1.relative_seq_self(seq) + len(data)
                     if self1.__sent_step_index < len(self1.__sent_steps) and \
                             tot >= self1.__sent_steps[self1.__sent_step_index]:
+                        if tot == size + 1:
+                            self1.__sent_step_index = STEPS
                         pct = int(self1.__sent_step_index*100/STEPS)
                         log(f'{pct}% has been sent')
                         self1.__sent_step_index += 1
@@ -84,6 +88,8 @@ class FileSenderReceiver:
                     tot = self1.relative_seq_other(tcp.seq) + len(data)
                     if self1.__recvd_step_index < len(self1.__recvd_steps) and \
                             tot >= self1.__recvd_steps[self1.__recvd_step_index]:
+                        if tot == size + 1:
+                            self1.__recvd_step_index = STEPS
                         pct = int(self1.__recvd_step_index*100/STEPS)
                         log(f'{pct}% has been recvd')
                         self1.__recvd_step_index += 1
@@ -93,7 +99,7 @@ class FileSenderReceiver:
 
         self.sock = SimTCPSocket(local_addr, local_port,
                 remote_addr, remote_port, TCP_STATE_ESTABLISHED,
-                send_ip_packet_func, self.store_file_data, event_loop,
+                send_ip_packet_func, self.store_file_data,
                 fast_retransmit=fast_retransmit, initial_cwnd=window)
         self.sock.bypass_handshake(local_initial_seq, remote_initial_seq)
         self.fh = None
@@ -114,37 +120,40 @@ class FileSenderReceiver:
     def send_file(self):
         with open(os.path.basename(self.filename), 'rb') as fh:
             while True:
-                d = fh.read(2048)
+                d = fh.read(3000)
                 if not d:
                     break
                 self.sock.send(d)
 
 
 class SimHost(TransportHost):
-    def schedule_items(self, event_loop, window, fast_retransmit, filename):
+    def schedule_items(self, window, fast_retransmit, filename):
         pass
 
 class SimHostA(SimHost):
-    def schedule_items(self, event_loop, window, fast_retransmit, filename):
+    def schedule_items(self, window, fast_retransmit, filename):
         app = FileSenderReceiver('10.0.0.1', A_PORT,
                 '10.0.0.2', B_PORT,
                 A_INITIAL_SEQ, B_INITIAL_SEQ,
                 window, fast_retransmit, filename,
-                self.send_packet, event_loop, self.log)
+                self.send_packet, self.log)
 
         self.install_socket_tcp('10.0.0.1', A_PORT, '10.0.0.2', B_PORT, app.sock)
-        event_loop.schedule_event(6, app.send_file)
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME, self.log, 'START')
+        loop.call_later(START_TIME + 2, app.send_file)
 
 class SimHostB(SimHost):
-    def schedule_items(self, event_loop, window, fast_retransmit, filename):
+    def schedule_items(self, window, fast_retransmit, filename):
         app = FileSenderReceiver('10.0.0.2', B_PORT,
                 '10.0.0.1', A_PORT,
                 B_INITIAL_SEQ, A_INITIAL_SEQ,
                 window, fast_retransmit, filename,
-                self.send_packet, event_loop, self.log)
+                self.send_packet, self.log)
 
         self.install_socket_tcp('10.0.0.2', B_PORT, '10.0.0.1', A_PORT, app.sock)
-        event_loop.schedule_event(5, app.prepare_to_receive)
+        loop = asyncio.get_event_loop()
+        loop.call_later(START_TIME + 1, app.prepare_to_receive)
 
 
 def main():
@@ -177,10 +186,14 @@ def main():
     else:
         fast_retransmit = False
 
-    host = cls(args.router)
-    event_loop = NetworkEventLoop(host._handle_frame)
-    host.schedule_items(event_loop, fast_retransmit, args.window, args.file)
-    event_loop.run()
+    with cls(args.router) as host:
+        host.schedule_items(fast_retransmit, args.window, args.file)
+
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
 
 if __name__ == '__main__':
     main()

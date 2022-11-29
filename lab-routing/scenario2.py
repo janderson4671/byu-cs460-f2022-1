@@ -13,6 +13,8 @@ from cougarnet.sim.sys_cmd import sys_cmd_pid
 
 from dvrouter import DVRouter
 
+START_TIME = 6
+
 class SimHost(DVRouter):
     def _handle_frame(self, frame, intf):
         try:
@@ -41,22 +43,22 @@ class SimHost(DVRouter):
 class SimHost1(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(3, self.log, 'START')
-        loop.call_later(6, self.drop_link, 'r1-r5')
-        loop.call_later(15, self.log, 'STOP')
+        loop.call_later(START_TIME, self.log, 'START')
+        loop.call_later(START_TIME + 3, self.drop_link, 'r1-r5')
+        loop.call_later(START_TIME + 12, self.log, 'STOP')
 
 class SimHost2(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
-        loop.call_later(4, self.send_icmp_echo, 'r5')
-        loop.call_later(5, self.send_icmp_echo, 'r4')
-        loop.call_later(12, self.send_icmp_echo, 'r5')
-        loop.call_later(13, self.send_icmp_echo, 'r4')
+        loop.call_later(START_TIME + 1, self.send_icmp_echo, 'r5')
+        loop.call_later(START_TIME + 2, self.send_icmp_echo, 'r4')
+        loop.call_later(START_TIME + 9, self.send_icmp_echo, 'r5')
+        loop.call_later(START_TIME + 10, self.send_icmp_echo, 'r4')
 
 class SimHost5(SimHost):
     def schedule_items(self,):
         loop = asyncio.get_event_loop()
-        loop.call_later(6, self.drop_link, 'r5-r1')
+        loop.call_later(START_TIME + 3, self.drop_link, 'r5-r1')
 
 def main():
     hostname = socket.gethostname()

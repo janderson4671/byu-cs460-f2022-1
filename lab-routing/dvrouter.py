@@ -13,7 +13,7 @@ from forwarding_table_native import ForwardingTableNative as ForwardingTable
 
 class DVRouter(BaseHost):
     def __init__(self):
-        super(DVRouter, self).__init__()
+        super().__init__()
 
         self.my_dv = self.create_dv()
         self.neighbor_dvs = {}
@@ -152,10 +152,11 @@ class DVRouter(BaseHost):
         # Initialize our DV -- and optionally send our DV to our neighbors
         self.update_dv()
 
-        # Schedule self.send_dv_next() to be called every second
-        # (DV_TABLE_SEND_INTERVAL)
+        # Schedule self.send_dv_next() to be called in 1 second and
+        # self.update_dv_next() to be called in 0.5 seconds.
         loop.call_later(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
-
+        loop.call_later(DV_TABLE_SEND_INTERVAL - DV_TABLE_SEND_INTERVAL / 2,
+                self.update_dv_next)
 
     def _handle_msg(self, sock: socket.socket) -> None:
         ''' Receive and handle a message received on the UDP socket that is
@@ -204,6 +205,15 @@ class DVRouter(BaseHost):
         self.send_dv()
         loop = asyncio.get_event_loop()
         loop.call_later(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
+
+    def update_dv_next(self):
+        '''Update DV using neighbors' DVs.  Then schedule this method to be
+        called again in 1 second (DV_TABLE_SEND_INTERVAL).
+        '''
+
+        self.update_dv()
+        loop = asyncio.get_event_loop()
+        loop.call_later(DV_TABLE_SEND_INTERVAL, self.update_dv_next)
 
     def handle_down_link(self, neighbor: str):
         self.log(f'Link down: {neighbor}')

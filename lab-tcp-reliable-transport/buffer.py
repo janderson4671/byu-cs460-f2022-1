@@ -1,5 +1,5 @@
 class TCPSendBuffer(object):
-    def __init__(self, seq):
+    def __init__(self, seq: int):
         self.buffer = b''
         self.base_seq = seq
         self.next_seq = self.base_seq
@@ -50,7 +50,7 @@ class TCPSendBuffer(object):
 
 
 class TCPReceiveBuffer(object):
-    def __init__(self, seq):
+    def __init__(self, seq: int):
         self.buffer = {}
         self.base_seq = seq
 

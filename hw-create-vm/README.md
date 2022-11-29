@@ -195,7 +195,7 @@ this environment.
 
    f. Click "Play".
 
-5. Follow steps 4 and 5 from the [VirtualBox instructions](#virtualbox-amd64-only).
+5. Follow steps 4 through 6 from the [VirtualBox instructions](#virtualbox-amd64-only).
    Before rebooting (step 5), do the following to "remove" the install CD.
    Click the "Drive Image Options" button, select "CD/DVD (ISO) Image", then click
    "Eject".

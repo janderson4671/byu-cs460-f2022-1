@@ -13,44 +13,44 @@ application-layer protocols such as HTTP, DNS, and SMTP.
     First, backup your `/etc/hosts` by creating a copy of it at
     `/etc/hosts.bak`:
  
-    ```
-    sudo cp -pr /etc/hosts{,.bak}
+    ```bash
+    $ sudo cp -pr /etc/hosts{,.bak}
     ```
 
     Now open `/etc/hosts` with root privileges, e.g.:
 
-    ```
-    sudo -e /etc/hosts
+    ```bash
+    $ sudo -e /etc/hosts
     ```
 
     Modify the first line so it looks like this:
 
     ```
-    127.0.0.1	localhost bar.com foo.bar.com bar.net
+    127.0.0.1	localhost bar.com foo.bar.com foobar.com
     ```
 
     Then close and save the file.  That makes it so that applications on your
-    virtual machine (VM) resolve `bar.com`, `foo.bar.com`, and `bar.net` to
+    virtual machine (VM) resolve `bar.com`, `foo.bar.com`, and `foobar.com` to
     127.0.0.1, i.e., the loopback address on your system.  Thus, when your
     browser attempts to retrieve the Web page at `bar.com` (or any of the
     others), it will connect the Web server you will start on your VM
     (listening on 127.0.0.1), rather than some external host.
 
 
- 2. Begin Packet Capture.  Open Wireshark as the root user:
+ 2. Begin Packet Capture.  Open Wireshark:
 
-    ```
-    sudo wireshark
+    ```bash
+    $ wireshark
     ```
 
-    Enter `port 8000` into the capture filter field field.  Then double-click
+    Enter "port 8000" into the capture filter field field.  Then double-click
     "Loopback: lo" to begin capturing on the loopback interface.
 
 
  3. Start Web Server.
 
     In another terminal window or tab, start a Python-based Web server with
-    CGI-enabled:
+    CGI-enabled from within the homework directory:
 
     ```bash
     $ python3 -m http.server --cgi
@@ -61,52 +61,65 @@ application-layer protocols such as HTTP, DNS, and SMTP.
  5. Issue Web Requests.  From the newly-opened Web browser window, issue the
     following requests, one after the other:
 
-    1. `http://bar.com:8000/cgi-bin/test.cgi`
-    2. `http://bar.com:8000/cgi-bin/test.cgi` (a second time - you might need to click the reload button)
+    1. `http://foobar.com:8000/cgi-bin/test.cgi`
+    2. `http://foo.bar.com:8000/cgi-bin/test.cgi`
     3. `http://foo.bar.com:8000/cgi-bin/test.cgi`
-    4. `http://bar.net:8000/cgi-bin/test.cgi`
-    5. `http://bar.com:8000/test.txt`
-    6. `http://bar.com:8000/test.txt` (a second time - you might need to click the reload button)
+       (a second time - you might need to click the reload button)
+    4. `http://bar.com:8000/cgi-bin/test.cgi`
+    5. `http://foobar.com:8000/cgi-bin/test.cgi`
+    6. `http://bar.com:8000/test.txt`
+    7. `http://bar.com:8000/test.txt`
+       (a second time - you might need to click the reload button)
 
- 6. "Update" `test.txt`, and re-request it.  Run the following command:
+ 6. "Update" `test.txt` by running the following command:
 
-    `$ touch test.txt`
+    ```bash
+    $ touch test.txt
+    ```
+    (The `touch` command simply updates the timestamp of the specified file, so
+    it appears newer.)
 
     Then re-request the following URL:
 
-    7. `http://bar.com:8000/test.txt` (a third time - you might need to click the reload button)
+    8. `http://bar.com:8000/test.txt`
+       (a third time - you might need to click the reload button)
 
- 7. Follow TCP Streams.  For each of the URLs requested in #5 and #6, open the
-    corresponding TCP stream by following the instructions below:
+ 7. Find the frame that includes the very first HTTP request, i.e., "GET
+    /cgi-bin/test.cgi", right-click on that frame, and select "Follow", then
+    "TCP Stream".  You will see both the HTTP request (red) and the HTTP
+    response (blue) for the selected stream in the "Follow TCP Stream" window.
+    Look at the contents of the selected HTTP request to make sure that it
+    matches the request you wanted to see.  (Your browser makes some extra
+    requests that you should ignore).
 
-    1. Find the frame that includes the request, e.g., "GET /cgi-bin/test.cgi",
-       right-click on that frame and select "Follow", then "TCP Stream".  Leave
-       open the "Follow TCP Stream" window that is created.
-    2. Go back to the Wireshark capture window, and clear the display filter
-       (should say "tcp.stream eq 1" or the like).  Then go back to #1 for the
-       next URL.
+    To switch to streams corresponding to the other HTTP requests/responses,
+    modify the "Stream" field in the lower right-hand corner of the window
+    (e.g., 1, 2, 3, etc.).
+
 
 ## Questions
 
-Consider each of the HTTP requests issued above when answering the following
-questions.  Use the TCP stream windows to help you understand and answer the
-questions.
+Answer the following questions, using the streams corresponding to the HTTP
+requests and responses issued above.  For each question that asks "why",
+provide a brief but specific explanation.
  
- 1. In request #1, was a cookie sent by the client?  Why or why
-    not?
- 2. In request #2, was a cookie sent by the client?  Why or why
-    not?
- 3. In request #3, was a cookie sent by the client?  Why or why
-    not?
- 4. In request #4, was a cookie sent by the client?  Why or why
-    not?
- 5. In request #5, was a cookie sent by the client?  Why or why
-    not?
- 6. What was the response code associated with request #5?
- 7. What was the response code associated with request #6?  Why was it
-    different than that of request #5?  Be brief but specific.
- 8. What was the response code associated with request #7?  Why was it
-    different than that of request #6?  Be brief but specific.
+ 1. In HTTP request 1, was a cookie sent by the client?  Why or why not?
+ 2. In HTTP request 2, was a cookie sent by the client?  What does the answer
+    (yes/no) tell you about the ability or inability of the server to set a
+    cookie with a "domain" attribute other than its own domain name (i.e., the
+    domain name in the URL)?
+ 3. In HTTP request 3, was a cookie sent by the client?  What does the answer
+    (yes/no) tell you about the ability or inability of the server to set a
+    cookie with a "domain" attribute other than its own domain name (i.e., the
+    domain name in the URL)?
+ 4. In HTTP request 4, was a cookie sent by the client?  Why or why not?
+ 5. In HTTP request 5, was a cookie sent by the client?  Why or why not?
+ 6. In HTTP request 6, was a cookie sent by the client?  Why or why not?
+ 7. What was the response code associated with request 6?  Why?
+ 8. What was the response code associated with request 7?  Why was it
+    different than that of request 6?
+ 9. What was the response code associated with request 8?  Why was it
+    different than that of request 7?
 
 
 ## Cleanup
@@ -119,7 +132,7 @@ questions.
 
  2. Close Wireshark.
 
- 3. Close Firefox
+ 3. Close Firefox.
 
 
 # Part 2 - TCP Fast Open
@@ -133,19 +146,15 @@ depending on the presence of the `-l` option.  When the script is run with the
 ## Getting Started
 
  1. Start cougarnet.  File `h2-s1.cfg` contains a configuration file that
-    describes a network with two hosts, `a` and `b`, connected to switch `s1`.
+    describes a network with two hosts, `a` and `b`, directly connected.
 
     Run the following command to create and start the network:
 
     ```bash
-    cougarnet --display -w s1 h2-s1.cfg
+    $ cougarnet --display --wireshark=a-b h2-s1.cfg
     ```
 
- 2. Begin Packet Capture.  Go to the open Wireshark window, click the "Capture
-    Options" button (the gear icon).  Select the `s1-a` interface for packet
-    capture.
-
- 3. Start and interact with an echo server. Run the following on host `b` to
+ 2. Start and interact with an echo server. Run the following on host `b` to
     start the echo server:
 
     ```bash
@@ -250,19 +259,15 @@ This part is an exercise to help you understand SMTP.
     ```
 
  2. Start cougarnet.  File `h2-s1.cfg` contains a configuration file that
-    describes a network with two hosts, `a` and `b`, connected to switch `s1`.
+    describes a network with two hosts, `a` and `b`, directly connected.
 
     Run the following command to create and start the network:
 
     ```bash
-    cougarnet --display -w s1 h2-s1.cfg
+    cougarnet --display --wireshark=a-b h2-s1.cfg
     ```
 
- 3. Begin Packet Capture.  Go to the open Wireshark window, click the "Capture
-    Options" button (the gear icon).  Select the `s1-a` interface for packet
-    capture.
-
- 4. Start a "debugging" SMTP server on host `b`:
+ 3. Start a "debugging" SMTP server on host `b`:
 
     ```bash
     b$ sudo python3 -m smtpd -n --class DebuggingServer 0.0.0.0:25
@@ -271,34 +276,40 @@ This part is an exercise to help you understand SMTP.
     This Python SMTP server simply interacts with clients over SMTP and prints
     the messages it receives to standard output.
 
- 5. Send a message.  On host `a`, execute the following to send an email
+ 4. Send a message.  On host `a`, execute the following to send an email
     message from host `a` to host `b`:
 
-    ```
+    ```bash
     a$ swaks --server 10.0.0.2 --to joe@example.com
     ```
 
- 6. Send a message with attachment.  On host `a`, execute the following to send
+ 5. Send a message with attachment.  On host `a`, execute the following to send
     an email message with an attachment from host `a` to host `b`:
 
-    ```
+    ```bash
     a$ swaks --server 10.0.0.2 --attach byu-y-mtn2.jpg --to joe@example.com
     ```
 
- 7. Follow TCP Streams.  For the emails sent in #5 and #6, open the
+ 6. Follow TCP Streams.  For the emails sent in #5 and #6, open the
     corresponding TCP stream by following the instructions below:
 
-    1. Find one of the frames that is part of the SMTP interaction.
-       Right-click on that frame and select "Follow", then "TCP Stream".  Leave
-       open the "Follow TCP Stream" window that is created.
-    2. Go back to the Wireshark capture window, and clear the display filter
-       (should say "tcp.stream eq 1" or the like).  Then go back to #1 for the
-       next email.
+ 6. Find a frame that is part of the first SMTP interaction.  Right-click on
+    that frame, and select "Follow", then "TCP Stream".  You will see the
+    entire SMTP conversation, including both server (blue) and client (red).
+    Look at the contents of the SMTP session to make sure that it matches the
+    one that you wanted to see.
+
+    To switch to streams corresponding to the other SMTP conversation, modify
+    the "Stream" field in the lower right-hand corner of the window (e.g., 1,
+    2, 3, etc.).
+
 
 ## Questions
 
-Consider each of the emails sent above when answering the following questions.
-Use the TCP stream windows to help you understand and answer the questions.
+Answer the following questions, using the streams corresponding to the SMTP
+communications and responses issued above.  For each question that asks "why",
+provide a brief but specific explanation.
+
 
  1. With SMTP, who initiates the SMTP conversation - client or server?
  2. What command does the client use to introduce itself?

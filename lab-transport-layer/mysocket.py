@@ -30,7 +30,6 @@ from headers import IPv4Header, UDPHeader, TCPHeader, \
 IPPROTO_TCP = 6 # Transmission Control Protocol
 IPPROTO_UDP = 17 # User Datagram Protocol
 
-
 class UDPSocket:
     def __init__(self, local_addr: str, local_port: int,
             send_ip_packet_func: callable,

@@ -6,7 +6,14 @@ TCP Fast Open (TFO).
 
 # Getting Started
 
- 
+## Install Dependencies
+
+Make sure that `curl` is installed.
+
+```
+$ sudo apt install curl
+```
+
 ## Update Cougarnet
 
 Make sure you have the most up-to-date version of Cougarnet installed by
@@ -30,7 +37,7 @@ two hosts, `a` and `b`, connected to switch `s1`.
 Run the following command to create and start the network:
 
 ```bash
-cougarnet --display -w s1 h2-s1.cfg
+cougarnet --display --wireshark=a-s1 h2-s1.cfg
 ```
 
 

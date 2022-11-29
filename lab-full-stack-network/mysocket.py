@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import asyncio
 import random
 
 TCP_FLAGS_SYN = 0x02
@@ -17,6 +20,7 @@ TCP_STATE_TIME_WAIT = 9
 TCP_STATE_CLOSED = 10
 
 from buffer import TCPSendBuffer, TCPReceiveBuffer
+
 from headers import IPv4Header, UDPHeader, TCPHeader, \
         IP_HEADER_LEN, UDP_HEADER_LEN, TCP_HEADER_LEN, \
         TCPIP_HEADER_LEN, UDPIP_HEADER_LEN
@@ -26,10 +30,10 @@ from headers import IPv4Header, UDPHeader, TCPHeader, \
 IPPROTO_TCP = 6 # Transmission Control Protocol
 IPPROTO_UDP = 17 # User Datagram Protocol
 
-
 class UDPSocket:
-    def __init__(self, local_addr, local_port,
-            send_ip_packet_func, notify_on_data_func):
+    def __init__(self, local_addr: str, local_port: int,
+            send_ip_packet_func: callable,
+            notify_on_data_func: callable) -> UDPSocket:
 
         self._local_addr = local_addr
         self._local_port = local_port
@@ -38,30 +42,85 @@ class UDPSocket:
 
         self.buffer = []
 
-    def handle_packet(self, pkt):
+    def handle_packet(self, pkt: bytes) -> None:
         self.buffer.append((b'', '0.0.0.0', 0))
         self._notify_on_data()
 
     @classmethod
-    def create_packet(cls, src, sport, dst, dport, data=''):
+    def create_packet(cls, src: str, sport: int, dst: str, dport: int,
+            data: bytes=b'') -> bytes:
         pass
 
-    def send_packet(self, remote_addr, remote_port, data):
+    def send_packet(self, remote_addr: str, remote_port: int,
+            data: bytes) -> None:
         pass
 
-    def recvfrom(self):
+    def recvfrom(self) -> tuple[bytes, str, int]:
         return self.buffer.pop(0)
 
-    def sendto(self, data, remote_addr, remote_port):
+    def sendto(self, data: bytes, remote_addr: str, remote_port: int) -> None:
         self.send_packet(remote_addr, remote_port, data)
 
 
-class TCPSocket:
-    def __init__(self, local_addr, local_port,
-            remote_addr, remote_port, state,
-            send_ip_packet_func, notify_on_data_func, event_loop,
-            fast_retransmit=False, initial_cwnd=1000, mss=1000,
-            congestion_control='none'):
+class TCPSocketBase:
+    def handle_packet(self, pkt: bytes) -> None:
+        pass
+
+class TCPListenerSocket(TCPSocketBase):
+    def __init__(self, local_addr: str, local_port: int,
+            handle_new_client_func: callable, send_ip_packet_func: callable,
+            notify_on_data_func: callable,
+            socket_cls: type=None,
+            fast_retransmit: bool=False, initial_cwnd: int=1000,
+            mss: int=1000,
+            congestion_control: str='none') -> TCPListenerSocket:
+
+        # These are all vars that are saved away for instantiation of TCPSocket
+        # objects when new connections are created.
+        self._local_addr = local_addr
+        self._local_port = local_port
+        self._handle_new_client = handle_new_client_func
+
+        self._send_ip_packet_func = send_ip_packet_func
+        self._notify_on_data_func = notify_on_data_func
+        if socket_cls is None:
+            socket_cls = TCPSocket
+        self._socket_cls = socket_cls
+
+        self._fast_retransmit = fast_retransmit
+        self._initial_cwnd = initial_cwnd
+        self._mss = mss
+        self._congestion_control = congestion_control
+
+    def handle_packet(self, pkt: bytes) -> None:
+        ip_hdr = IPv4Header.from_bytes(pkt[:IP_HEADER_LEN])
+        tcp_hdr = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
+        data = pkt[TCPIP_HEADER_LEN:]
+
+        if tcp_hdr.flags & TCP_FLAGS_SYN:
+            sock = self._socket_cls(self._local_addr, self._local_port,
+                    ip_hdr.src, tcp_hdr.sport,
+                    TCP_STATE_LISTEN,
+                    send_ip_packet_func=self._send_ip_packet_func,
+                    notify_on_data_func=self._notify_on_data_func,
+                    fast_retransmit=self._fast_retransmit,
+                    initial_cwnd=self._initial_cwnd, mss=self._mss,
+                    congestion_control=self._congestion_control)
+
+            self._handle_new_client(self._local_addr, self._local_port,
+                    ip_hdr.src, tcp_hdr.sport, sock)
+
+            sock.handle_packet(pkt)
+
+
+class TCPSocket(TCPSocketBase):
+    def __init__(self, local_addr: str, local_port: int,
+            remote_addr: str, remote_port: int, state: int,
+            send_ip_packet_func: callable,
+            notify_on_data_func: callable,
+            fast_retransmit: bool=False, initial_cwnd: int=1000,
+            mss: int=1000,
+            congestion_control: str='none') -> TCPSocket:
 
         # The local/remote address/port information associated with this
         # TCPConnection
@@ -77,9 +136,6 @@ class TCPSocket:
         # notifying the application that we have received data.
         self._send_ip_packet = send_ip_packet_func
         self._notify_on_data = notify_on_data_func
-
-        # The event loop
-        self._event_loop = event_loop
 
         # Base sequence number
         self.base_seq_self = self.initialize_seq()
@@ -132,15 +188,17 @@ class TCPSocket:
 
 
     @classmethod
-    def connect(cls, local_addr, local_port,
-            remote_addr, remote_port,
-            send_ip_packet_func, notify_on_data_func, event_loop,
-            fast_retransmit=False, initial_cwnd=1000, mss=1000,
-            congestion_control='none'):
+    def connect(cls, local_addr: str, local_port: int,
+            remote_addr: str, remote_port: int,
+            send_ip_packet_func: callable,
+            notify_on_data_func: callable,
+            fast_retransmit: bool=False, initial_cwnd: int=1000,
+            mss: int=1000,
+            congestion_control: str='none') -> TCPSocketBase:
         sock = cls(local_addr, local_port,
                 remote_addr, remote_port,
                 TCP_STATE_CLOSED,
-                send_ip_packet_func, notify_on_data_func, event_loop,
+                send_ip_packet_func, notify_on_data_func,
                 fast_retransmit=fast_retransmit,
                 initial_cwnd=initial_cwnd, mss=mss,
                 congestion_control=congestion_control)
@@ -149,7 +207,7 @@ class TCPSocket:
 
         return sock
 
-    def bypass_handshake(self, base_seq_self, base_seq_other):
+    def bypass_handshake(self, base_seq_self: int, base_seq_other: int):
         '''
         Bypass the TCP three-way handshake.  Allocate a TCPReceiveBuffer
         instance, and initialize it with the base sequence number of the peer
@@ -167,7 +225,7 @@ class TCPSocket:
         self.ack = base_seq_other + 1
         self.receive_buffer = TCPReceiveBuffer(self.base_seq_other + 1)
 
-    def handle_packet(self, pkt):
+    def handle_packet(self, pkt: bytes) -> None:
         ip_hdr = IPv4Header.from_bytes(pkt[:IP_HEADER_LEN])
         tcp_hdr = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
         data = pkt[TCPIP_HEADER_LEN:]
@@ -183,22 +241,22 @@ class TCPSocket:
                 # handle ACK
                 self.handle_ack(pkt)
 
-    def initialize_seq(self):
+    def initialize_seq(self) -> int:
         return random.randint(0, 65535)
 
-    def initiate_connection(self):
+    def initiate_connection(self) -> None:
         pass
 
-    def handle_syn(self, pkt):
+    def handle_syn(self, pkt: bytes) -> None:
         pass
 
-    def handle_synack(self, pkt):
+    def handle_synack(self, pkt: bytes) -> None:
         pass
 
-    def handle_ack_after_synack(self, pkt):
+    def handle_ack_after_synack(self, pkt: bytes) -> None:
         pass
 
-    def continue_connection(self, pkt):
+    def continue_connection(self, pkt: bytes) -> None:
         if self.state == TCP_STATE_LISTEN:
             self.handle_syn(pkt)
         elif self.state == TCP_STATE_SYN_SENT:
@@ -206,18 +264,19 @@ class TCPSocket:
         elif self.state == TCP_STATE_SYN_RECEIVED:
             self.handle_ack_after_synack(pkt)
 
-        if self.state == TCP_STATE_ESTABLISHED:
-            pass
-
-    @classmethod
-    def create_packet(cls, src, sport, dst, dport,
-            seq, ack, flags, data=b''):
-        return b''
-
-    def send_packet(self, seq, ack, flags, data=b''):
+    def send_data(self, data: bytes, flags: int=0) -> None:
         pass
 
-    def relative_seq_other(self, seq):
+    @classmethod
+    def create_packet(cls, src: str, sport: int, dst: str, dport: int,
+            seq: int, ack: int, flags: int, data: bytes=b'') -> bytes:
+        return b''
+
+    def send_packet(self, seq: int, ack: int, flags: int,
+            data: bytes=b'') -> None:
+        pass
+
+    def relative_seq_other(self, seq: int) -> int:
         '''
         Return the specified sequence number (int) relative to the base
         sequence number for the other side of the connection.
@@ -228,7 +287,7 @@ class TCPSocket:
         return seq - self.base_seq_other
 
 
-    def relative_seq_self(self, seq):
+    def relative_seq_self(self, seq: int) -> int:
         '''
         Return the specified sequence number (int) relative to our base
         sequence number.
@@ -238,80 +297,36 @@ class TCPSocket:
 
         return seq - self.base_seq_self
 
-    def send_if_possible(self):
+    def send_if_possible(self) -> int:
         pass
 
-    def send(self, data):
+    def send(self, data: bytes) -> None:
         self.send_buffer.put(data)
         self.send_if_possible()
 
-    def recv(self, num):
+    def recv(self, num: int) -> bytes:
         data = self.ready_buffer[:num]
         self.ready_buffer = self.ready_buffer[num:]
         return data
 
-    def handle_data(self, pkt):
+    def handle_data(self, pkt: bytes) -> None:
         pass
 
-    def handle_ack(self, pkt):
+    def handle_ack(self, pkt: bytes) -> None:
         pass
 
-    def retransmit(self):
+    def retransmit(self) -> None:
         pass
 
-    def start_timer(self):
-        self.timer = self._event_loop.schedule_event(self.timeout, self.retransmit)
+    def start_timer(self) -> None:
+        loop = asyncio.get_event_loop()
+        self.timer = loop.call_later(self.timeout, self.retransmit)
 
     def cancel_timer(self):
         if not self.timer:
             return
-        self._event_loop.cancel_event(self.timer)
+        self.timer.cancel()
         self.timer = None
 
     def send_ack(self):
         self.send_packet(self.seq, self.ack, TCP_FLAGS_ACK)
-
-class TCPListenerSocket:
-    def __init__(self, local_addr, local_port, handle_new_client_func,
-            send_ip_packet_func, notify_on_data_func, event_loop,
-            socket_cls=TCPSocket,
-            fast_retransmit=False, initial_cwnd=1000, mss=1000,
-            congestion_control='none'):
-
-        # These are all vars that are saved away for instantiation of TCPSocket
-        # objects when new connections are created.
-        self._local_addr = local_addr
-        self._local_port = local_port
-        self._handle_new_client = handle_new_client_func
-
-        self._send_ip_packet_func = send_ip_packet_func
-        self._notify_on_data_func = notify_on_data_func
-        self._event_loop = event_loop
-        self._socket_cls = socket_cls
-
-        self._fast_retransmit = fast_retransmit
-        self._initial_cwnd = initial_cwnd
-        self._mss = mss
-        self._congestion_control = congestion_control
-
-
-    def handle_packet(self, pkt):
-        ip_hdr = IPv4Header.from_bytes(pkt[:IP_HEADER_LEN])
-        tcp_hdr = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
-        data = pkt[TCPIP_HEADER_LEN:]
-
-        if tcp_hdr.flags & TCP_FLAGS_SYN:
-            sock = self._socket_cls(self._local_addr, self._local_port,
-                    ip_hdr.src, tcp_hdr.sport,
-                    TCP_STATE_LISTEN,
-                    send_ip_packet_func=self._send_ip_packet_func,
-                    notify_on_data_func=self._notify_on_data_func,
-                    event_loop=self._event_loop,
-                    fast_retransmit=self._fast_retransmit,
-                    initial_cwnd=self._initial_cwnd, mss=self._mss,
-                    congestion_control=self._congestion_control)
-
-            self._handle_new_client(self._local_addr, self._local_port,
-                    ip_hdr.src, tcp_hdr.sport, sock)
-
-            sock.handle_packet(pkt)

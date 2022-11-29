@@ -13,7 +13,7 @@ from cougarnet.sim.sys_cmd import sys_cmd_pid
 
 from dvrouter import DVRouter
 
-START_TIME = 8
+START_TIME = 12
 
 class SimHost(DVRouter):
     def _handle_frame(self, frame, intf):
@@ -45,7 +45,7 @@ class SimHost2(SimHost):
         loop = asyncio.get_event_loop()
         loop.call_later(START_TIME, self.log, 'START')
         loop.call_later(START_TIME + 8, self.drop_link, 'r2-r8')
-        loop.call_later(START_TIME + 18, self.log, 'STOP')
+        loop.call_later(START_TIME + 20, self.log, 'STOP')
 
 class SimHost8(SimHost):
     def schedule_items(self):
@@ -69,7 +69,7 @@ class SimHost7(SimHost):
     def schedule_items(self):
         loop = asyncio.get_event_loop()
         loop.call_later(START_TIME + 6, self.send_icmp_echo, 'r15')
-        loop.call_later(START_TIME + 17, self.send_icmp_echo, 'r15')
+        loop.call_later(START_TIME + 19, self.send_icmp_echo, 'r15')
 
 def main():
     hostname = socket.gethostname()

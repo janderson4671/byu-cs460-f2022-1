@@ -81,6 +81,10 @@ The files given to you for this lab are the following:
    to use `native_apps=no`, you are using your own
    implementation for sending Ethernet frames, ARP, IP forwarding, and
    routing!
+ - `prefix.py` - This blank file will be
+   [replaced](#copy-prefixpy) with the `prefix.py` you created in the
+   [Network-Layer Lab](../lab-network-layer/).  It is placed here only to allow
+   the [starter commands](#starter-commands) to run without error.
  - `scenario1.cfg`, `scenario2.cfg`, and `scenario3.cfg` -
    [network configuration files](https://github.com/cdeccio/cougarnet/blob/main/README.md#network-configuration-file)
    describing three topologies for testing your routing implementation.
@@ -315,9 +319,9 @@ Copy your fleshed out copy of `prefix.py` from the
 $ cp ../lab-network-layer/prefix.py .
 ```
 
-While note everything needs to be working, the IP manipulation functions do
-need to work properly, enough to allow the `ip_prefix_last_address()` function
-to work properly.
+While not everything needs to be working, the IP manipulation functions do need
+to work properly, enough to allow the `ip_prefix_last_address()` function to
+work properly.
 
 
 ## Specification
@@ -356,7 +360,7 @@ to work properly.
    dependency on ARP to keep things more simple.
 
    The IP address for each interface can be found with the `int_to_info`
-   attribute.  The make it a prefix, simply add "/32".
+   attribute.  The make it a prefix, simply add "/32" to the end.
 
  - A router sends its own DV to every one of its neighbors in a UDP datagram.
    You do not have to set up the socket for sending and receiving UDP datagrams
@@ -381,7 +385,7 @@ to work properly.
    And the broadcast address for 10.1.2.20/30 is 10.1.2.23.
    
    You might recall that the [previous lab](../lab-network-layer/) had you
-   create several function related to IP prefix handling, one of which was to
+   create several functions related to IP prefix handling, one of which was to
    generate the broadcast (last) address for a given subnet (see
    [Part 2](../lab-network-layer/README.md#part-2---forwarding-table) and also
    the `handle_ip()` method in
@@ -440,7 +444,6 @@ to work properly.
      easier when creating forwarding table entries.
    - Saves the neighbor's DV, replacing any previous version, so it can be used
      later for running Bellman-Ford algorithm.
-   - Uses its neighbors DVs to re-create its own DV and forwarding table.
 
  - A router creates its own DV using the Bellman-Ford algorithm.  By iterating
    through the DV of every neighbor, a router learns the shortest distance to
@@ -456,16 +459,9 @@ to work properly.
    address), just as it did when the DV was initially created.  Just as before,
    those prefixes will always have a distance of of zero.
 
- - A router distributes its DV to its neighbors in two circumstances:
-
-   - When a router's own newly-created DV (which creation is prompted by a DV
-     message from a neighbor) is _different_ from its previous
-     version, then a new DV message is distributed immediately.
-
-   - A DV message is distributed to neighbors every one second, as a
-     keep-alive, to let neighbors know that the link is still up.
-
-   *IMPORTANT*: Only distribute your DV in one of these two circumstances!!
+ - A router distributes its DV to its neighbors every second. This both
+   provides an update to neighbors and serves as a keep-alive, to let neighbors
+   know that the link is still up.
 
  - A router updates its forwarding table whenever its own DV has changed after
    its re-creation.  For every prefix in its DV, the next hop is the IP address
@@ -515,16 +511,16 @@ implement the above specification.
    The method should do everything that is associated with receiving a DV
    message.
 
- - `update_dv()`.  This method takes no arguments.  The method should be called
-   by `handle_dv_message()` and should implement the Bellman-Ford algorithm
-   yielding a newly-created DV for the router.  In the case that the DV
-   changes, the IP addresses of the neighbors with shortest distances to IP
-   prefixes are used to create new forwarding table entries.
+ - `update_dv()`.  This method takes no arguments.  The method is called by
+   `update_dv_next()` (implemented for you) every 1 second.  It should
+   implement the Bellman-Ford algorithm, yielding a newly-created DV for the
+   router.  In the case that the DV changes, the IP addresses of the neighbors
+   with shortest distances to IP prefixes are used to create new forwarding table
+   entries.
 
- - `send_dv()`.  This method takes no arguments.  The method should be called
-   by `update_dv()` when a router's newly-created DV has changed.  It is also
-   called by `send_dv_next()` (implemented for you) every 1 second, to
-   implement a keep-alive.
+ - `send_dv()`.  This method takes no arguments.  The method is called by
+   `send_dv_next()` (implemented for you) every 1 second.  With it, a router
+   sends its own DV to each of its neighbors.
 
  - `handle_down_link()`.  This method takes a single argument:
 
@@ -533,8 +529,18 @@ implement the above specification.
 
    The method should be called whenever a router has detected a down link
    (through lack of keep-alive DV messages).  Basically this method should
-   simply discard the DV of the neighbor whose link is down and then call
-   `update_dv()`.
+   simply discard the DV of the neighbor whose link is down.
+
+Please note that `send_dv()` is automatically called every second, at 1
+second, 2 seconds, etc.  This is done _for you_ with the initial call to
+`send_dv_next()` (at 1 second), which perpetually calls `send_dv()` and then
+schedules `send_dv_next()` again one second later. Similarly, `update_dv()` is
+automatically called every second, at 0.5 seconds, 1.5 seconds, etc.  This is
+also done for you with the initial call to `update_dv_next()` (at 0.5 seconds),
+which perpetually calls `update_dv()` and then schedules `update_dv_next()`
+again one second later.
+
+You should not call `send_dv()` or `update_dv()` anywhere else in your code.
 
 
 ## Testing
@@ -564,8 +570,8 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 Then proceed to test scenarios 2 and 3.
 
 ```
-$ cougarnet --disable-ipv6 --stop=15 scenario2.cfg
-$ cougarnet --disable-ipv6 --stop=36 scenario3.cfg
+$ cougarnet --disable-ipv6 --stop=30 scenario2.cfg
+$ cougarnet --disable-ipv6 --stop=50 scenario3.cfg
 ```
 
 When all are working properly, test also with the `--terminal=none` option:
