@@ -5,7 +5,7 @@
 
    Run the following to delete bridge `foo`:
    ```bash
-   $ sudo ovs-vsctl foo
+   $ sudo ovs-vsctl del-br foo
    ```
  - "Error creating link `foo`: RTNETLINK answers: File exists"
 
