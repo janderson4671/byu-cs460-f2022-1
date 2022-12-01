@@ -6,6 +6,7 @@ from headers import IPv4Header, UDPHeader, TCPHeader, \
         TCPIP_HEADER_LEN, UDPIP_HEADER_LEN
 from host import Host
 from mysocket import UDPSocket, TCPSocketBase
+import struct
 
 class TransportHost(Host):
     def __init__(self, *args, **kwargs):

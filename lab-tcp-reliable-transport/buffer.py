@@ -41,7 +41,6 @@ class TCPSendBuffer(object):
         return (data, seq)
 
     def slide(self, sequence):
-
         # Calculate how much to cut off from begining of buffer
         cutoff_len = sequence - self.base_seq
         self.buffer = self.buffer[cutoff_len:]

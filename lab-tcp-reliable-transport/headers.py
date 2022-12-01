@@ -26,10 +26,33 @@ class IPv4Header:
 
     @classmethod
     def from_bytes(cls, hdr: bytes) -> IPv4Header:
-        return cls(0, 0, 0, 0, '0.0.0.0', '0.0.0.0')
+        length, = struct.unpack('!H', hdr[2:4])
+        ttl, = struct.unpack('!B', hdr[8:9])
+        protocol, = struct.unpack('!B', hdr[9:10])
+        checksum, = struct.unpack('!H', hdr[10:12])
+        src_bytes, = struct.unpack('!I', hdr[12:16])
+        dst_bytes, = struct.unpack('!I', hdr[16:20])
+        src_bytes = src_bytes.to_bytes(4, 'big')
+        dst_bytes = dst_bytes.to_bytes(4, 'big')
+        src = ip_binary_to_str(src_bytes)
+        dst = ip_binary_to_str(dst_bytes)
+
+        return cls(length, ttl, protocol, checksum, src, dst)
 
     def to_bytes(self) -> bytes:
-        return b''
+        hdr = b''
+        hdr += struct.pack('!B', (4 << 4) + 5)  # Version and IHL
+        hdr += struct.pack('!B', 0)             # Differenciated Services
+        hdr += struct.pack('!H', self.length)   # Total Length
+        hdr += struct.pack('!H', 0)             # Identification (For reassembly of fragmentation)  
+        hdr += struct.pack('!H', 0)             # Flags and Frame Offset
+        hdr += struct.pack('!B', self.ttl)      # Time to live (usually 64)
+        hdr += struct.pack('!B', self.protocol) # Protocol (UDP or TCP)
+        hdr += struct.pack('!H', self.checksum) # Checksum of packet
+        hdr += struct.pack('!I', int.from_bytes(ip_str_to_binary(self.src), "big"))   # Source IP Address
+        hdr += struct.pack('!I', int.from_bytes(ip_str_to_binary(self.dst), "big"))  # Destination IP Address
+
+        return hdr
 
 
 class UDPHeader:
@@ -69,7 +92,26 @@ class TCPHeader:
 
     @classmethod
     def from_bytes(cls, hdr: bytes) -> TCPHeader:
-        return cls(0, 0, 0, 0, 0, 0)
+        sport, = struct.unpack('!H', hdr[0:2])
+        dport, = struct.unpack('!H', hdr[2:4])
+        seq, = struct.unpack('!I', hdr[4:8])
+        ack, = struct.unpack('!I', hdr[8:12])
+        flags, = struct.unpack('!B', hdr[13:14])
+        checksum, = struct.unpack('!H', hdr[16:18])
+
+        return cls(sport, dport, seq, ack, flags, checksum)
 
     def to_bytes(self) -> bytes:
-        return b''
+        hdr = b''
+        hdr += struct.pack('!H', self.sport)    # Source Port
+        hdr += struct.pack('!H', self.dport)    # Destination Port
+        hdr += struct.pack('!I', self.seq)      # Sequence Number
+        hdr += struct.pack('!I', self.ack)      # Acknowledgment Number
+        hdr += struct.pack('!B', (5 << 4))      # Data Offset
+        # Ommitting ECN
+        hdr += struct.pack('!B', self.flags)
+        hdr += struct.pack('!H', 64)            # Window Size (64 for this lab)
+        hdr += struct.pack('!H', self.checksum) # Checksum (will be "0" for this lab)
+        hdr += struct.pack('!H', 0)             # Urgent Pointer (will be "0" for this lab)
+
+        return hdr
