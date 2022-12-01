@@ -343,6 +343,11 @@ class TCPSocket(TCPSocketBase):
         # Send as much data as possible
         while (self.send_buffer.bytes_outstanding() < self.cwnd):
             data, seq = self.send_buffer.get(self.mss)
+
+            # If no data then return
+            if (len(data) == 0):
+                return
+
             flags = self.set_flags(False, False)
 
             self.send_packet(seq, self.ack, flags, data)
@@ -351,7 +356,6 @@ class TCPSocket(TCPSocketBase):
             if not self.timer:
                 self.cancel_timer()
                 self.start_timer()
-
 
     def send(self, data: bytes) -> None:
         self.send_buffer.put(data)
@@ -401,7 +405,7 @@ class TCPSocket(TCPSocketBase):
             self.num_dup_acks = self.num_dup_acks + 1
 
             # Check for triple duplicate ack
-            if (self.num_dup_acks == 3):
+            if (self.num_dup_acks == 3 and self.fast_retransmit == True):
                 self.num_dup_acks = 0
                 print(f"Triple Duplicate Ack!")
                 self.retransmit()
@@ -428,13 +432,11 @@ class TCPSocket(TCPSocketBase):
         flags = self.set_flags(False, False)
         self.send_packet(self.seq, self.ack, flags, data)
 
-        print(f"Atempting to Retransmit! Seq: {self.last_ack}")
+        print(f"Atempting to Retransmit! Seq: {self.seq} Data Length: {len(data)} Buffer Base: {self.send_buffer.base_seq}")
 
         # Restart Timer
         self.cancel_timer()
         self.start_timer()
-
-        self.send_if_possible()
 
     def start_timer(self) -> None:
         loop = asyncio.get_event_loop()
