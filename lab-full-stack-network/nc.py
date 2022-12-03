@@ -22,3 +22,4 @@ class NetcatTCP:
         msg = self.sock.recv(65536)
         msg = msg.decode('utf-8')
         self.output.write(msg)
+        self.output.flush()
