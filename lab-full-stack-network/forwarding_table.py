@@ -13,34 +13,39 @@
 
 Test the ForwardingTable.get_entry() method
 >>> table.get_entry('10.20.0.25')
-('someintf', 'someip')
+('r1-g', '10.30.0.18')
 >>> table.get_entry('10.20.0.34')
-('someintf', 'someip')
+('r1-f', '10.30.0.14')
 >>> table.get_entry('10.20.1.20')
-('someintf', 'someip')
+('r1-c', '10.30.0.2')
 >>> table.get_entry('10.20.3.1')
-('someintf', 'someip')
+('r1-k', '10.30.0.34')
 >>> table.get_entry('10.20.0.2')
-('someintf', 'someip')
+('r1-j', '10.30.0.30')
 >>> table.get_entry('10.20.0.11')
-('someintf', 'someip')
+('r1-h', '10.30.0.22')
 >>> table.get_entry('10.20.0.150')
-('someintf', 'someip')
+('r1-d', '10.30.0.6')
 >>> table.get_entry('10.20.0.7')
-('someintf', 'someip')
+('r1-i', '10.30.0.26')
 >>> table.get_entry('10.20.0.75')
-('someintf', 'someip')
+('r1-e', '10.30.0.10')
+>>> table.get_entry('128.156.76.45')
+('r1-k', '10.30.0.34')
 '''
 
-from prefix import Prefix
+from prefix import Prefix, ip_str_to_int
 
 class ForwardingTable(object):
     def __init__(self):
         self.entries = {}
 
-    def add_entry(self, prefix: str, intf: str, next_hop: str) -> None:
+    def add_entry(self, prefix, intf, next_hop):
         '''Add forwarding entry mapping prefix to interface and next hop
-        IP address.'''
+        IP address.
+
+        prefix: str
+        '''
 
         prefix = Prefix(prefix)
 
@@ -49,37 +54,53 @@ class ForwardingTable(object):
 
         self.entries[prefix] = (intf, next_hop)
 
-    def remove_entry(self, prefix: str) -> None:
-        '''Remove the forwarding entry matching prefix.'''
+    def remove_entry(self, prefix):
+        '''Remove the forwarding entry matching prefix.
+
+        prefix: str
+        '''
 
         prefix = Prefix(prefix)
 
         if prefix in self.entries:
             del self.entries[prefix]
 
-    def flush(self, family: int=None, global_only: bool=True) -> None:
-        '''Flush the routing table.'''
+    def flush(self, family=None, global_only=True):
+        '''
+        Flush the routing table.
+
+        prefix: str
+        '''
 
         routes = self.get_all_entries(family=family, \
                 resolve=False, global_only=global_only)
 
         for prefix in routes:
-            del self.entries[prefix]
+            self.remove_entry(prefix)
 
-    def get_entry(self, address: str) -> tuple[str, str]:
+    def get_entry(self, address):
         '''Return the subnet entry having the longest prefix match of
         address.  The entry is a tuple consisting of interface and
-        next-hop IP address.  If there is no match, return None, None.'''
+        next-hop IP address.  If there is no match, return None, None.
 
-        #FIXME - complete the rest of the method
-        return None, None
+        address: str, x.x.x.x or x:x::x
+        '''
 
-    def get_all_entries(self, family: int=None,
-            resolve: bool=False, global_only: bool=True):
+        longest_match_len = 0
+        longest_match_entry = {}
 
-        entries = {}
-        for prefix in self.entries:
-            intf, next_hop = self.entries[prefix]
-            if next_hop is not None or not global_only:
-                entries[prefix] = (intf, next_hop)
-        return entries
+        for prefix in self.entries.keys():
+            # If we have already matched with a longer one, then just skip this one
+            if prefix.prefix_len < longest_match_len:
+                continue
+
+            if (address in prefix):
+                longest_match_entry = self.entries[prefix]
+                longest_match_len = prefix.prefix_len
+
+        # If nothing ever matched, then send default entry out
+        if longest_match_len == 0:
+            default_prefix = Prefix("0.0.0.0/0")
+            longest_match_entry = self.entries[default_prefix]
+
+        return longest_match_entry[0], longest_match_entry[1]
