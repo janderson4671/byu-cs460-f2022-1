@@ -367,6 +367,6 @@ it, and tar it up:
 
 ```
 $ mkdir full-stack-lab
-$ cp buffer.py dvrouter.py forwarding_table.py headers.py host.py mysocket.py subnet.py switch.py transporthost.py full-stack-lab
+$ cp buffer.py dvrouter.py forwarding_table.py headers.py host.py mysocket.py prefix.py switch.py transporthost.py full-stack-lab
 $ tar -zcvf full-stack-lab.tar.gz full-stack-lab
 ```
