@@ -88,6 +88,8 @@ class ForwardingTable(object):
 
         longest_match_len = 0
         longest_match_entry = {}
+        
+        print(f"DV Entries: {self.entries}")
 
         for prefix in self.entries.keys():
             # If we have already matched with a longer one, then just skip this one

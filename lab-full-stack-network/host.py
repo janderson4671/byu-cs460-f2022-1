@@ -96,6 +96,8 @@ class Host(BaseHost):
         # Grab routes from the environment
         # Route: ["Address", "intf", "next-hop"]
         routes = json.loads(os.environ["COUGARNET_ROUTES"])
+
+        print(f"Routes: {routes}")
         
         # Go through each of the routes and add them to table
         for route in routes:
@@ -121,7 +123,7 @@ class Host(BaseHost):
 
             entry = self.int_to_info[key]
 
-            print(f"Entry: {entry.ipv4_addrs[0]} Target: {target_ip}")
+            # print(f"Entry: {entry.ipv4_addrs[0]} Target: {target_ip}")
 
             if (entry.ipv4_addrs[0] == target_ip):
                 print(f"Returning true for entry {entry.ipv4_addrs[0]} matching {target_ip}")
@@ -160,21 +162,16 @@ class Host(BaseHost):
     def _handle_frame(self, frame, intf):
         target_mac = frame[0:6]
 
-        print(f"Target Mac: {mac_binary_to_str(target_mac)}")
-
         # Check if this frame relates to me
         if (target_mac == mac_str_to_binary(self.int_to_info[intf].mac_addr) or target_mac == mac_str_to_binary("ff:ff:ff:ff:ff:ff")):
-            print("I need to handle this!")
             # Grab type
             frame_type, = struct.unpack("!H", frame[12:14])
             payload = frame[14:]
 
             # Call appropriate handler
             if (frame_type == ETH_P_IP):
-                print("HANDLE_IP")
                 self.handle_ip(payload, intf)
             elif (frame_type == ETH_P_ARP):
-                print("HANDLE_ARP")
                 self.handle_arp(payload, intf)
 
         # This frame is not related to me    
@@ -185,22 +182,15 @@ class Host(BaseHost):
         # Grab target_ip
         target_ip = ip_binary_to_str(pkt[16:20])
 
-        # Check if it is broadcast
-        if (target_ip == self.bcast_for_int(intf)):
-            print("Received a Broadcast IP. Do not ignore")
-            return
-
-        # Check if I am the destination
-        if ((self.is_destination(target_ip, intf) == True)):
+        # Check if I am the destination or it is a broadcast
+        if ((self.is_destination(target_ip, intf) == True) or (target_ip == self.bcast_for_int(intf))):
             # Check protocol and handle accordingly
-            protocol = struct.unpack("!B", pkt[9:10])
-
-            print(f"Protocol: {protocol}")
+            protocol, = struct.unpack("!B", pkt[9:10])
 
             if (protocol == IPPROTO_TCP):
-                self.handle_tcp()
+                self.handle_tcp(pkt)
             elif (protocol == IPPROTO_UDP):
-                self.handle_udp
+                self.handle_udp(pkt)
         else:
             # Not my packet
             self.not_my_packet(pkt, intf)
@@ -269,8 +259,8 @@ class Host(BaseHost):
             self.send_frame(ether_frame, intf)
 
     def send_packet_on_int(self, pkt, intf, next_hop):
-        print(f'Attempting to send packet on {intf} with next hop {next_hop}:\n{repr(pkt)}')
-        
+        # print(f'Attempting to send packet on {intf} with next hop {next_hop}:\n{repr(pkt)}')
+    
         # See if it is the broadcast for subnet
         dest_ip = ip_binary_to_str(pkt[16:20])
         if (dest_ip == self.bcast_for_int(intf)):
@@ -298,7 +288,7 @@ class Host(BaseHost):
 
 
     def send_packet(self, pkt):
-        print(f'Attempting to send packet:\n{repr(pkt)}')
+        # print(f'Attempting to send packet:\n{repr(pkt)}')
 
         # Get destination IP from pkt
         target_ip = ip_binary_to_str(pkt[16:20])

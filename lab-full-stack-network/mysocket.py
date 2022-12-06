@@ -3,6 +3,10 @@ from __future__ import annotations
 import asyncio
 import random
 
+from cougarnet.util import ip_binary_to_str
+
+import struct
+
 TCP_FLAGS_SYN = 0x02
 TCP_FLAGS_RST = 0x04
 TCP_FLAGS_ACK = 0x10
@@ -43,24 +47,48 @@ class UDPSocket:
         self.buffer = []
 
     def handle_packet(self, pkt: bytes) -> None:
-        self.buffer.append((b'', '0.0.0.0', 0))
+
+        # Parse out src address and port along with data
+        src = ip_binary_to_str(pkt[12:16])
+        sport, = struct.unpack("!H", pkt[20:22])
+        data = pkt[28:]
+
+        print(f"Handling UDP Packet! \n SRC: {src}\n SPORT: {sport}\n DATA: {data}")
+
+        self.buffer.append((data, src, sport))
         self._notify_on_data()
 
     @classmethod
     def create_packet(cls, src: str, sport: int, dst: str, dport: int,
             data: bytes=b'') -> bytes:
-        pass
+        
+        # Create UDP Header obj
+        h_udp = UDPHeader(sport, dport, len(data) + UDP_HEADER_LEN, 0).to_bytes()
+
+        # Append data to h_udp for IP data
+        ip_data = h_udp + data
+
+        # Create IP Header
+        h_ip = IPv4Header(len(ip_data) + IP_HEADER_LEN, 64, IPPROTO_UDP, 0, src, dst).to_bytes()
+
+        # Append ip_data to h_ip for full packet
+        packet = h_ip + ip_data
+        return packet
 
     def send_packet(self, remote_addr: str, remote_port: int,
             data: bytes) -> None:
-        pass
+
+        # Create IP Packet
+        ip_packet = self.create_packet(self._local_addr, self._local_port, remote_addr, remote_port, data)
+
+        # Send it off
+        self._send_ip_packet(ip_packet)
 
     def recvfrom(self) -> tuple[bytes, str, int]:
         return self.buffer.pop(0)
 
     def sendto(self, data: bytes, remote_addr: str, remote_port: int) -> None:
         self.send_packet(remote_addr, remote_port, data)
-
 
 class TCPSocketBase:
     def handle_packet(self, pkt: bytes) -> None:
@@ -244,17 +272,110 @@ class TCPSocket(TCPSocketBase):
     def initialize_seq(self) -> int:
         return random.randint(0, 65535)
 
+    def set_flags(self, syn: bool, ack: bool):
+        flags: int = 0
+
+        # Setting bits in proper locations when needed
+        if (syn == True):
+            flags = flags + 2
+        if (ack == True):
+            flags = flags + 16
+        
+        return flags
+
+    def is_sin_flag_set(self, flags: int) -> bool:
+        return (flags == 2 or flags == 18)
+
+    def is_ack_flag_set(self, flags: int) -> bool:
+        return (flags == 16 or flags == 18)
+
     def initiate_connection(self) -> None:
-        pass
+        # Lets setup a connection!
+        seq = self.base_seq_self
+        ack = 0
+
+        # Set only the SYN Flag
+        flags = self.set_flags(True, False)
+        data = b''
+        self.send_packet(seq, ack, flags, data)
+
+        # Change state to SYN_SENT
+        self.state = TCP_STATE_SYN_SENT
+
 
     def handle_syn(self, pkt: bytes) -> None:
-        pass
+        # Grab seq and ack information from other side
+        seq, = struct.unpack("!I", pkt[24:28])
+        ack, = struct.unpack("!I", pkt[28:32])
+        flags, = struct.unpack("!B", pkt[33:34])
+
+        # If SYN Flag is not set then just ignore
+        if self.is_sin_flag_set(flags) == False:
+            return
+
+        print(f"Handle Syn:\n\tSEQ: {seq}\n\tACK: {ack}")
+
+        self.base_seq_self = self.initialize_seq()
+        self.seq = self.base_seq_self + 1
+        self.ack = seq
+
+        # Initialize receive buffer
+        self.receive_buffer = TCPReceiveBuffer(seq)
+
+        # Respond with a SYN/ACK packet
+        self.send_packet(self.seq, self.ack, self.set_flags(True, True), b'')
+
+        # Change state to SYN_RECEIVED
+        self.state = TCP_STATE_SYN_RECEIVED
 
     def handle_synack(self, pkt: bytes) -> None:
-        pass
+        # Grab information from packet
+        seq, = struct.unpack("!I", pkt[24:28])
+        ack, = struct.unpack("!I", pkt[28:32])
+        flags, = struct.unpack("!B", pkt[33:34])
+
+        # Ignore packet if SYN or ACK flags are not both set
+        if not ((self.is_sin_flag_set(flags) == True) and (self.is_ack_flag_set(flags)) == True):
+            return
+
+        print(f"Handle SYN/ACK:\n\tSEQ: {seq}\n\tACK: {ack}")
+
+        # If ack is not our SEQ + 1 then ignore packet
+        if (ack != self.seq - 1):
+            return
+
+        self.base_seq_other = seq - 1
+        self.ack = seq
+
+        # Initialize receive buffer
+        self.receive_buffer = TCPReceiveBuffer(seq)
+
+        # Send ACK back to them
+        self.send_packet(self.seq, self.ack, self.set_flags(False, True), b'')
+
+        # Set state to ESTABLISHED
+        self.state = TCP_STATE_ESTABLISHED
 
     def handle_ack_after_synack(self, pkt: bytes) -> None:
-        pass
+        # Grab seq and ack information from other side
+        seq, = struct.unpack("!I", pkt[24:28])
+        ack, = struct.unpack("!I", pkt[28:32])
+        flags, = struct.unpack("!B", pkt[33:34])
+
+        # Ignore packet if ack flag is not set
+        if (self.is_ack_flag_set(flags) == False):
+            return
+
+        # Ignore packet if SYN flag is set
+        if (self.is_sin_flag_set(flags) == True):
+            return
+
+        # Ignore packet if ack is not our base + 1
+        if (ack != self.base_seq_self + 1):
+            return
+        
+        # Transition state to ESTABLISED
+        self.state = TCP_STATE_ESTABLISHED
 
     def continue_connection(self, pkt: bytes) -> None:
         if self.state == TCP_STATE_LISTEN:
@@ -269,12 +390,31 @@ class TCPSocket(TCPSocketBase):
 
     @classmethod
     def create_packet(cls, src: str, sport: int, dst: str, dport: int,
-            seq: int, ack: int, flags: int, data: bytes=b'') -> bytes:
-        return b''
+        seq: int, ack: int, flags: int, data: bytes=b'') -> bytes:
+
+        # Create TCP Header
+        h_tcp = TCPHeader(sport, dport, seq, ack, flags, 0).to_bytes()
+
+        # Attach data to TCP Header
+        tcp_packet = h_tcp + data
+
+        # Create IP Header
+        h_ip = IPv4Header(len(tcp_packet) + IP_HEADER_LEN, 64, IPPROTO_TCP, 0, src, dst).to_bytes()
+
+        # Create Full Packet
+        packet = h_ip + tcp_packet
+        return packet
 
     def send_packet(self, seq: int, ack: int, flags: int,
-            data: bytes=b'') -> None:
+        data: bytes=b'') -> None:
+
+        # Create Packet
+        ip_packet = self.create_packet(self._local_addr, self._local_port, self._remote_addr, self._remote_port, seq, ack, flags, data)
+
+        # Send it off
+        self._send_ip_packet(ip_packet)
         pass
+
 
     def relative_seq_other(self, seq: int) -> int:
         '''
@@ -298,7 +438,23 @@ class TCPSocket(TCPSocketBase):
         return seq - self.base_seq_self
 
     def send_if_possible(self) -> int:
-        pass
+        # Send as much data as possible
+        while (self.send_buffer.bytes_outstanding() < self.cwnd):
+            data, seq = self.send_buffer.get(self.mss)
+
+            # If no data then return
+            if (len(data) == 0):
+                return
+
+            flags = self.set_flags(False, False)
+
+            print(f"Send Packet Info: {self.ack}")
+            self.send_packet(seq, self.ack, flags, data)
+
+            # Set timer (if not already set)
+            if not self.timer:
+                self.cancel_timer()
+                self.start_timer()
 
     def send(self, data: bytes) -> None:
         self.send_buffer.put(data)
@@ -310,13 +466,76 @@ class TCPSocket(TCPSocketBase):
         return data
 
     def handle_data(self, pkt: bytes) -> None:
-        pass
+        header_tcp: TCPHeader = TCPHeader.from_bytes(pkt[20:40])
+        segment = pkt[40:]
+
+        print(f"Getting Data Seq: {header_tcp.seq}")
+
+        # Save sequence of other side
+        # self.seq = header_tcp.seq
+
+        # Save data into receive buffer
+        self.receive_buffer.put(segment, header_tcp.seq)
+
+        # See if there is any new data for applciation
+        data, base = self.receive_buffer.get()
+
+        if (len(data) != 0):
+            # Update Ack
+            self.ack = base + len(data)
+
+            self.ready_buffer = self.ready_buffer + data
+            self._notify_on_data()
+        
+        # Send Ack
+        print(f"Sending Ack: {self.ack}")
+        self.send_ack()
 
     def handle_ack(self, pkt: bytes) -> None:
-        pass
+        # Grab IP-v4 header from pkt
+        header_tcp = TCPHeader.from_bytes(pkt[20:40])
+
+        ack = header_tcp.ack
+        self.seq = header_tcp.ack
+        print(f"Received Ack: {ack}")
+
+        # Check for duplicate ack
+        if (ack == self.last_ack):
+            self.num_dup_acks = self.num_dup_acks + 1
+
+            # Check for triple duplicate ack
+            if (self.num_dup_acks == 3 and self.fast_retransmit == True):
+                self.num_dup_acks = 0
+                print(f"Triple Duplicate Ack!")
+                self.retransmit()
+            return
+        
+        self.last_ack = ack
+
+        # Cancel the timer
+        self.cancel_timer()
+
+        # Slide window over
+        self.send_buffer.slide(ack)
+
+        # Start timer if there are bytes still in flight
+        if (self.send_buffer.bytes_outstanding() > 0):
+            self.start_timer()
+
+        # Send if possible (With newly slid window)
+        self.send_if_possible()
+
 
     def retransmit(self) -> None:
-        pass
+        data, base = self.send_buffer.get_for_resend(self.mss)
+        flags = self.set_flags(False, False)
+        self.send_packet(self.seq, self.ack, flags, data)
+
+        print(f"Atempting to Retransmit! Seq: {self.seq} Data Length: {len(data)} Buffer Base: {self.send_buffer.base_seq}")
+
+        # Restart Timer
+        self.cancel_timer()
+        self.start_timer()
 
     def start_timer(self) -> None:
         loop = asyncio.get_event_loop()

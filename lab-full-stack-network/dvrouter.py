@@ -14,12 +14,15 @@ from prefix import *
 from mysocket import UDPSocket
 from transporthost import TransportHost
 
+from forwarding_table import ForwardingTable
+
 class DVRouter(TransportHost):
     def __init__(self):
         super().__init__(True)
 
-        self.my_dv = {}
+        self.my_dv = self.create_dv()
         self.neighbor_dvs = {}
+        self.neighbor_ips = {}
 
         self._dv_socks = {}
 
@@ -83,7 +86,33 @@ class DVRouter(TransportHost):
             break
 
     def handle_dv_message(self, msg: bytes) -> None:
-        pass
+        print("I Got a DV!")
+        # print(f"Message: {msg}")
+
+        # Decode the message from the data
+        obj_str = msg.decode("utf-8")
+        obj = json.loads(obj_str)
+
+        # Grab information from message and store it in associated dv table
+        ip = obj["ip"]
+        prefix = obj["prefix"]
+        name = obj["name"]
+        dv = obj["dv"]
+
+        # Discard packet if it is from me
+        if (name == self.hostname):
+            return
+
+        # Save neighbor IP as a prefix
+        print(f"Neighbor IP: {ip}")
+        self.neighbor_ips[name] = [ip, prefix]
+
+        # Save neighbor DV
+        self.neighbor_dvs[name] = dv
+
+        # Update my DV
+        self.update_dv()
+
 
     def send_dv_next(self):
         '''Send DV to neighbors, and schedule this method to be called again in
@@ -131,8 +160,140 @@ class DVRouter(TransportHost):
             resolved_dv[dst] = distance
         return resolved_dv
 
+    def update_forwarding_table(self):
+        # Flush the table out
+        self.forwarding_table = ForwardingTable()
+        self.initialize_fowarding_table(self.forwarding_table)
+
+        # print(f"Neighbor IPS: {self.neighbor_ips}")
+
+        # Go through my dv and add next hops to prefixes
+        for prefix in self.my_dv.keys():
+            dv_entry = self.my_dv[prefix]
+
+            if (dv_entry["next_hop"] == self.hostname):
+                continue
+
+            entry = self.neighbor_ips[dv_entry["next_hop"]]
+            next_hop_prefix = entry[1]
+            next_hop_ip = entry[0]
+            # print(f"Update DV: {dv_entry}")
+
+            # print(f"Update Next Hop: {next_hop_prefix}")
+
+            interface = ""
+            # Using next_hop, find interface that it will go out
+            for intf in self.all_interfaces:
+                if (intf == "lo"):
+                    continue
+
+                # print(f"Interface: {intf}")
+                # print(f"ipv4 addrs: {self.int_to_info[intf].ipv4_addrs}")
+
+                intf_prefix_len = self.int_to_info[intf].ipv4_prefix_len
+                intf_prefix = ip_prefix(ip_str_to_int(self.int_to_info[intf].ipv4_addrs[0]), socket.AF_INET, intf_prefix_len)
+                intf_prefix_str = ip_int_to_str(intf_prefix, socket.AF_INET) + f"/{intf_prefix_len}"
+
+                # print(f"Next Hop: {next_hop_prefix}")
+                # print(f"intf_prefix: {intf_prefix_str}")
+
+                if (next_hop_prefix == intf_prefix_str):
+                    interface = intf
+                    break
+
+            # Add entry
+            print(f"Forwarding Table Entry: Prefix {prefix}, Intf: {interface}, Next {next_hop_ip}")
+            self.forwarding_table.add_entry(prefix, interface, next_hop_ip)
+
+        print(f"Updated Forwarding Table: {self.forwarding_table.entries}")
+
+
+    def create_dv(self):
+        dv = {}
+        # Go through interfaces and create dv entries with 0 (Add /32 prefix)
+        for intf in self.all_interfaces:
+            if (intf == "lo"):
+                continue
+
+            # Get IP and convert to prefix
+            ip_addr = self.int_to_info[intf].ipv4_addrs[0]
+            prefix_len = self.int_to_info[intf].ipv4_prefix_len
+            prefix = ip_prefix(ip_str_to_int(ip_addr), socket.AF_INET, prefix_len)
+            prefix_str = ip_int_to_str(prefix, socket.AF_INET) + f"/{prefix_len}"
+
+            # Initial distance is 0
+            entry = {}
+            entry["dist"] = 0
+            entry["next_hop"] = self.hostname
+            dv[prefix_str] = entry
+            
+        return dv
+
+    # Prefix Map: Prefix ==> {distance: 0, hostname: r3}
+    def populate_prefix_map(self, map, name):
+        print(f"Name: {name}")
+        neighbor_entry = self.neighbor_dvs[name]
+
+        for prefix in neighbor_entry.keys():
+            # If the prefix does not exist, then add it
+            # If it does exist, then check if the distance is less than current
+            #   stored value
+            if (prefix not in map.keys()):
+                entry = {}
+                entry["dist"] = neighbor_entry[prefix]["dist"]
+                entry["next_hop"] = name
+
+                map[prefix] = entry
+            else:
+                if (neighbor_entry[prefix]["dist"] < map[prefix]["dist"]):
+                    map[prefix]["dist"] = neighbor_entry[prefix]["dist"]
+                    map[prefix]["next_hop"] = name
+
+    def bellman_ford(self):
+        # Start from scratch
+        dv = self.create_dv()
+        prefix_map = {}
+
+        # Go through each of immediate neighbors dv's and perform algorithm
+        # print(f"Neighbors: {self.neighbor_dvs}")
+
+        for name in self.neighbor_dvs.keys():
+            self.populate_prefix_map(prefix_map, name)
+
+        # Go through each entry in prefix map and add 1 to all entries (this adds my cost to get there)
+        for prefix in prefix_map.keys():
+            distance = prefix_map[prefix]["dist"]
+            prefix_map[prefix]["dist"] = distance + 1
+
+        # Add default dv stuff into map
+        for key in dv.keys():
+            entry = {}
+            entry["dist"] = dv[key]["dist"]
+            entry["next_hop"] = self.hostname
+            # Potential Bug!!
+            prefix_map[key] = entry
+        
+        return prefix_map
+
     def update_dv(self) -> None:
-        pass
+        # print("Updating my DV!")
+        # copy my own dv
+        dv = self.my_dv.copy()
+
+        print(f"My DV: {self.my_dv}")
+
+        new_dv = self.bellman_ford()
+
+        # if the new_dv is different than the original then broadcast dv out
+        if (dv != new_dv):
+            print(f"New DV: {new_dv}")
+            # Update forwarding table
+            self.my_dv = new_dv
+            self.update_forwarding_table()
+
+            print("We have a new DV! We will broadcast it out!")
+
+            self.send_dv()
 
     def bcast_for_int(self, intf: str) -> str:
         ip_int = ip_str_to_int(self.int_to_info[intf].ipv4_addrs[0])
@@ -141,8 +302,37 @@ class DVRouter(TransportHost):
         bcast = ip_int_to_str(ip_bcast_int, socket.AF_INET)
         return bcast
 
+    def create_dv_message(self, intf):
+        msg = {}
+
+        # Create IP prefix
+        ip_addr = self.int_to_info[intf].ipv4_addrs[0]
+        prefix_len = self.int_to_info[intf].ipv4_prefix_len
+        prefix = ip_prefix(ip_str_to_int(ip_addr), socket.AF_INET, prefix_len)
+        prefix_str = ip_int_to_str(prefix, socket.AF_INET) + f"/{prefix_len}"
+
+        msg["ip"] = ip_addr
+        msg["prefix"] = prefix_str
+        msg["name"] = self.hostname
+        msg["dv"] = self.my_dv
+
+        # print(f"Creating Message: {msg}")
+
+        msg_str = json.dumps(msg)
+        msg_bytes = msg_str.encode("utf-8")
+        return msg_bytes
+
     def send_dv(self) -> None:
         print('Sending DV')
+
+        # Send my DV to all interfaces (Except loopback)
+        for intf in self.all_interfaces:
+            if (intf == "lo"):
+                continue
+
+            msg = self.create_dv_message(intf)
+
+            self._send_msg(msg, self.bcast_for_int(intf))
 
 
 def main():
